@@ -1,0 +1,261 @@
+
+þ
+
+Quick-Sourcetext
+D1:MINIGRAF.QIK 
+----------------
+Length: $0D41
+
+Free  : $6A2A
+----------------
+
+
+
+* Small Graphics program demo for
+* the Touch Talet library
+* (c) RAINDORF SOFT '90
+
+
+INCLUDE
+[
+D:TABLET.LIB
+]
+
+BYTE
+[
+X,Y,OCOL,NCOL,FUNKT,ART
+STICK=632,CH=764
+]
+ARRAY
+[
+FX(2),FY(2)
+]
+
+MAIN
+
+UNSIGN
+
+FUNKT=0
+ART=0
+
+.GRAF15
+
+.TBLT_ON
+
+-1
+
+REPEAT
+  IF CH=255
+    .TBLT_READ(0,X,Y)
+    IF X<>228       ;pen on tablet?
+      .POINT        ;show cursor
+      IF FUNKT>0    ;function changed?
+        .MERK
+      ENDIF        
+    ENDIF
+  ELSE
+    .MENU(CH)     ;or key pressed?
+    CH=255
+  ENDIF
+UNTIL X<>228
+
+IF FUNKT<>0   ;if no function
+  JUMP(1)     ;back to DRAW()
+ENDIF
+
+WHILE X<>228
+  .TBLT_READ(0,X,Y)
+  IF X<>228
+    IF STICK=14  ;DRAW if button on
+      DRAW(X,Y)  ;pen pressed
+    ELSE
+      .POINT     ;Show cursor
+    ENDIF
+  ENDIF
+WEND
+
+JUMP(1)          ;again
+
+ENDMAIN
+
+
+PROC GRAF15
+BEGIN
+  CLOSE(6)
+  OPEN(6,12,15,"S:")
+  SETCOL(2,8,4)
+  .RAHMEN
+  COLOR(1)
+  NCOL=1
+  FUNKT=0
+  ART=0
+ENDPROC
+
+
+*Show cursor for a moment
+PROC POINT
+BEGIN
+  POS(X,Y)
+  LOCATE(OCOL)
+  PLOT(X,Y)
+  COLOR(OCOL)
+  PLOT(X,Y)
+  COLOR(NCOL)
+ENDPROC
+
+
+PROC MENU
+IN
+BYTE
+[
+TAST
+]
+BEGIN
+  IF TAST=31
+    NCOL=1         ;colour 1
+    COLOR(NCOL)
+  ELSE
+   IF TAST=30
+     NCOL=2        ;colour 2
+     COLOR(NCOL)
+   ELSE
+    IF TAST=26
+      NCOL=3       ;colour 3
+      COLOR(NCOL)
+    ELSE
+     IF TAST=24
+       NCOL=0      ;background colour
+       COLOR(NCOL)
+     ELSE
+      IF TAST=18
+        COLOR(125) ;clear 'c'
+        PLOT(0,0)
+        COLOR(NCOL)
+        .RAHMEN
+      ELSE
+       IF TAST=21
+         FUNKT=2   ;BOX "B"
+         ART=2
+       ELSE
+        IF TAST=56
+          FUNKT=2  ;FRAME "F"
+          ART=1
+        ELSE
+         IF TAST=58
+           FUNKT=0 ;DRAW "D"
+           ART=0
+         ELSE
+          IF TAST=61 ;CUT "G"
+            FUNKT=2 ;save two points
+            ART=3
+          ELSE
+           IF TAST=10 ;PASTE "P"
+            FUNKT=1 ;save one point
+            ART=4 
+           ENDIF
+          ENDIF
+         ENDIF
+        ENDIF          
+       ENDIF
+      ENDIF
+     ENDIF
+    ENDIF
+   ENDIF
+  ENDIF
+ENDPROC
+
+
+PROC RAHMEN
+BEGIN
+  COLOR(2)
+  PLOT(0,0)
+  DRAW(159,0)
+  DRAW(159,191)
+  DRAW(0,191)
+  DRAW(0,0)
+ENDPROC
+
+
+*Save to pairs of co-ordinates if a
+*function is chosen
+
+PROC MERK
+BEGIN
+  IF STICK=14
+    FX(FUNKT)=X
+    FY(FUNKT)=Y
+    FUNKT-
+    REPEAT
+    UNTIL STICK<>14
+  ENDIF
+  IF FUNKT=0  ;if pair is saved
+    .FUNKTION ;execute function
+  ENDIF
+ENDPROC
+
+
+PROC FUNKTION
+LOCAL
+BYTE
+[
+X1,Y1,X2,Y2,H
+]
+WORD
+[
+XW1,XW2
+]
+BEGIN
+  X1=FX(1)
+  Y1=FY(1)
+  X2=FX(2)
+  Y2=FY(2)
+  IF ART=1      ;FRAME
+    COLOR(NCOL)
+    PLOT(X1,Y1)
+    DRAW(X2,Y1)
+    DRAW(X2,Y2)
+    DRAW(X1,Y2)
+    DRAW(X1,Y1)
+    FUNKT=2   ;time to save new pairs
+  ELSE
+    IF ART=2      ;BOX
+      COLOR(NCOL)
+      IF Y1>Y2 ;Y sort
+        H=Y2
+        Y2=Y1
+        Y1=H
+      ENDIF
+      H=Y1
+      REPEAT
+        PLOT(X1,H)
+        DRAW(X2,H)
+        H+
+      UNTIL H>Y2
+      FUNKT=2
+    ELSE
+      IF ART=3   ;CUT
+        IF X1>X2 ;sort x
+          H=X2
+          X2=X1
+          X1=H
+        ENDIF
+        XW1=X1           ;graphics 15:
+        ADD(XW1,XW1,XW1) ;X coord. * 2
+        XW2=X2
+        ADD(XW2,XW2,XW2)
+        ADD(XW2,1,XW2) ;Add one to x2
+        CUT(XW1,Y1,XW2,Y2,$6000)
+        FUNKT=2
+      ELSE
+        IF ART=4 ;PASTE
+          XW1=X1
+          ADD(XW1,XW1,XW1)
+          PASTE(0,XW1,Y1,$6000)
+          FUNKT=1
+        ENDIF
+      ENDIF
+    ENDIF
+  ENDIF
+ENDPROC
+
+ÿ

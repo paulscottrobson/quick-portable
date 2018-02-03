@@ -1,0 +1,144 @@
+
+þ
+
+Quick-Sourcetext
+D1:BIT.QIK      
+----------------
+Length: $0561
+
+Free  : $720A
+----------------
+
+
+
+* BIT commands demo
+* (c) '90 Hyperon Soft
+
+* Gets 2 BYTE operands and 
+* computes OR, AND and EOR
+
+BYTE
+[
+OP1,OP2
+]
+MAIN
+
+  CLOSE(6)
+  OPEN(6,12,0,"E:")
+
+  REPEAT
+
+    ?("8 Bit Demo")
+    ?("1st operand")
+    INPUT(OP1)
+    ?("2nd operand")
+    INPUT(OP2)
+
+    .DEMO(OP1,OP2)
+
+  UNTIL 1=0
+
+
+* Compute the commands and display the
+* result in bit mode
+
+PROC DEMO
+IN
+BYTE
+[
+B1,B2
+]
+LOCAL
+BYTE
+[
+ERG
+]
+BEGIN
+
+  OR(B1,B2,ERG)
+  .BIT_PRNT(B1,B2,ERG,"OR")
+
+  AND(B1,B2,ERG)
+  .BIT_PRNT(B1,B2,ERG,"AND")
+
+  EOR(B1,B2,ERG)
+  .BIT_PRNT(B1,B2,ERG,"EXCLUSIVE OR")
+
+  ?
+  
+ENDPROC
+
+
+PROC BIT_PRNT
+IN
+BYTE
+[
+B1,B2,B3
+]
+ARRAY
+[
+TEXT(20)
+]
+LOCAL
+ARRAY
+[
+MUSTER1(9),MUSTER2(9),MUSTER3(9)
+]
+BEGIN
+
+* convert bits to ascii string
+  .BIT(B1,MUSTER1)
+  .BIT(B2,MUSTER2)
+  .BIT(B3,MUSTER3)
+
+  ?
+  ?(TEXT)
+  ?("OPERAND1 :",MUSTER1)
+  ?("OPERAND2 :",MUSTER2)
+  ?("RESULT   :",MUSTER3)
+
+ENDPROC
+
+
+* Converts one byte to ascii
+
+PROC BIT
+IN
+BYTE
+[
+B       * Byte to display
+]
+OUT
+ARRAY
+[
+BITS(9) * bits of byte
+]
+LOCAL
+BYTE
+[
+J     * Index for bits in byte
+I     * bit number to get
+]
+BEGIN
+
+* highest bit of B
+  I=128
+* to be put at pos 0 in string
+  J=0
+
+  REPEAT
+    IF B>=I
+      BITS(J)=49  * 1 is bit is set
+      SUB(B,I,B)
+    ELSE
+      BITS(J)=48  * 0 if it isn't
+    ENDIF
+    LSRB(I) * next lower bit
+    J+      * next pos in string
+  UNTIL I=0
+  BITS(8)=0 * End of string
+
+ENDPROC
+
+
+ÿ

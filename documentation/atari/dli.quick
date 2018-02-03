@@ -1,0 +1,75 @@
+
+þ
+
+Quick-Sourcetext
+D1:DLI.QIK      
+----------------
+Length: $0287
+
+Free  : $74E4
+----------------
+
+
+
+* Two DLIs in QUICK
+
+BYTE
+[
+BCOL=53272   *screen colour register
+]
+
+WORD
+[
+ADR,DL=560
+]
+
+MAIN
+  ?("Here we use two different")
+  ?("DLI's at a time")
+  ?("One DLI in line 3, the other in")
+  ?("line 12")
+
+*place the graphics mode value 2+128
+*in line 3 and 12
+
+  ADD(DL,6,ADR)
+  POKE(ADR,130)
+  ADD(DL,15,ADR)
+  POKE(ADR,130)
+
+*VBI on
+  VBI(DSYNC)
+
+ENDMAIN
+
+
+INTER D1
+
+BEGIN
+  PUSH
+  SYNC(1)    *Synchronize
+  BCOL=4     *Change colour
+  DLI(D2)    *Set vector to 2. DLI
+  PULL
+ENDDLI
+
+
+INTER D2
+
+BEGIN
+  PUSH
+  SYNC(1)
+  BCOL=10
+  PULL
+ENDDLI
+
+
+*VBI resets the vector to DLI 1 after
+*every screen cycle
+
+INTER DSYNC
+
+BEGIN
+  DLI(D1)
+ENDVBI
+ÿ

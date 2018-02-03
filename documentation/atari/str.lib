@@ -1,0 +1,528 @@
+
+þ
+
+Quick-Sourcetext
+D1:STR.LIB      
+----------------
+Length: $136D
+
+Free  : $63FE
+----------------
+
+
+
+* QUICK V2.1
+* Standard String-Library
+* extract from QUICKmagazin 5
+* (c) 1992 by HYPERON SOFT
+* international version 11/92
+
+* Uses RAM between $A800 and $AC00
+
+
+**  STRCMP  **
+* compares 2 Strings 
+* Result: 1 S1=S2
+*         2 S1>S2
+*         3 S2>S1
+
+PROC STRCMP
+IN
+  ARRAY
+  [
+  STR1(255)=$A800,STR2(255)=$A900
+  ]
+OUT
+  BYTE
+  [
+  ERG
+  ]
+LOCAL
+  BYTE
+  [
+  I,S1
+  ]
+BEGIN
+  I=0
+  ERG=1
+  REPEAT
+    S1=STR1(I)
+    IF S1<>STR2(I)
+      IF S1>STR2(I)
+        ERG=2
+      ELSE
+        ERG=3
+      ENDIF
+      S1=0
+    ENDIF
+    I+
+  UNTIL S1=0
+ENDPROC
+
+
+** STRCHR  **
+* searches 1 character in a String
+* Result: < 255 Position,
+*         = 255 not found
+
+PROC STRCHR
+IN
+  ARRAY
+  [
+  STR(255)=$A800
+  ]
+  BYTE
+  [
+  CHR
+  ]
+OUT
+  BYTE
+  [
+  SPOS
+  ]
+LOCAL
+  BYTE
+  [
+  I,S
+  ]
+BEGIN
+  I=0
+  SPOS=255
+  REPEAT
+    S=STR(I)
+    IF CHR=S
+      S=0
+      SPOS=I
+    ENDIF
+    I+
+  UNTIL S=0
+ENDPROC
+
+
+** STRCAT  **
+* concatenates Strings
+* The result may not be laonger than
+* 255 charcters
+
+PROC STRCAT
+IN
+  ARRAY
+  [
+  STR1(255)=$AB00,STR2(255)=$A900
+  ]
+OUT
+  ARRAY
+  [
+  STR3(255)=$AA00
+  ]
+LOCAL
+  BYTE
+  [
+  I,J,S
+  ]
+BEGIN
+  .STRLEN(STR1,I)
+  J=0
+  STR3=STR1
+  REPEAT
+    S=STR2(J)
+    STR3(I)=S
+    J+
+    I+
+    IF I=255
+      S=0
+    ENDIF
+  UNTIL S=0
+ENDPROC
+
+
+**  STRLEN  **
+* calculates the length of a string
+* Result 0 to 255
+
+PROC STRLEN
+IN
+  ARRAY
+  [
+  STR(255)=$A800
+  ]
+OUT
+  BYTE
+  [
+  LEN
+  ]
+BEGIN
+  LEN=0
+  WHILE STR(LEN)<>0
+    LEN+
+  WEND
+ENDPROC
+
+
+**  STRUPR  **
+* converts lowercase in uppercase
+
+PROC STRUPR
+IN
+  ARRAY
+  [
+  STR1(255)=$A800
+  ]
+OUT
+  ARRAY
+  [
+  STR2(255)=$A900
+  ]
+LOCAL
+  BYTE
+  [
+  I,S
+  ]
+BEGIN
+  I=0
+  REPEAT
+    S=STR1(I)
+    IF S>96
+      IF S<123
+        SUB(S,32,S)
+      ENDIF
+    ENDIF
+    STR2(I)=S
+    I+
+  UNTIL S=0
+ENDPROC
+
+
+** STRGRP  **
+* converts lowercase in graphical
+* characters
+
+PROC STRGRP
+IN
+  ARRAY
+  [
+  STR1(255)=$A800
+  ]
+OUT
+  ARRAY
+  [
+  STR2(255)=$A900
+  ]
+LOCAL
+  BYTE
+  [
+  I,S
+  ]
+BEGIN
+  I=0
+  REPEAT
+    S=STR1(I)
+    IF S>96
+      IF S<123
+        SUB(S,96,S)
+      ENDIF
+    ENDIF
+    STR2(I)=S
+    I+
+  UNTIL S=0
+ENDPROC
+
+
+**  STRLWR  **
+* converts uppercase to lowercase
+
+PROC STRLWR
+IN
+  ARRAY
+  [
+  STR1(255)=$A800
+  ]
+OUT
+  ARRAY
+  [
+  STR2(255)=$A900
+  ]
+LOCAL
+  BYTE
+  [
+  I,S
+  ]
+BEGIN
+  I=0
+  REPEAT
+    S=STR1(I)
+    IF S>64
+      IF S<91
+        ADD(S,32,S)
+      ENDIF
+    ENDIF
+    STR2(I)=S
+    I+
+  UNTIL S=0
+ENDPROC
+
+
+**  STRICMP  **
+* compares 2 Strings, does not
+* care about lower/uppercase
+
+PROC STRICMP
+IN
+  ARRAY
+  [
+  STR1(255)=$AA00,STR2(255)=$AB00
+  ]
+OUT
+  BYTE
+  [
+  ERG
+  ]
+BEGIN
+  .STRUPR(STR1,STR1)
+  .STRUPR(STR2,STR2)
+  .STRCMP(STR1,STR2,ERG)
+ENDPROC
+
+
+**  STRCUT  **
+* returns a part of the string
+
+PROC STRCUT
+IN
+  ARRAY
+  [
+  STR1(255)=$A800
+  ]
+  BYTE
+  [
+  A,E
+  ]
+OUT
+  ARRAY
+  [
+  STR(255)=$A800
+  ]
+LOCAL
+  BYTE
+  [
+  I,S
+  ]
+BEGIN
+  I=0
+  REPEAT
+    S=STR(A)
+    STR(I)=S
+    I+
+    A+
+  UNTIL A>E
+  STR(I)=0
+ENDPROC
+
+
+**  STRSET  **
+* fills a String with characters
+
+PROC STRSET
+IN
+  BYTE
+  [
+  CHR,LEN
+  ]
+OUT
+  ARRAY
+  [
+  STR(255)=$A800
+  ]
+LOCAL
+  BYTE
+  [
+  I
+  ]
+BEGIN
+  I=0
+  REPEAT
+    STR(I)=CHR
+    I+
+  UNTIL I=LEN
+  STR(I)=0
+ENDPROC
+
+
+**  STRINV  **
+* inverts a String
+
+PROC STRINV
+IN
+  ARRAY
+  [
+  STR(255)=$A800
+  ]
+OUT
+  ARRAY
+  [
+  STR(255)=$A800
+  ]
+LOCAL
+  BYTE
+  [
+  I,S
+  ]
+BEGIN
+  I=0
+  REPEAT
+    S=STR(I)
+    ADD(S,128,S)
+    STR(I)=S
+    I+
+  UNTIL S=128
+  I-
+  STR(I)=0
+ENDPROC  
+
+
+**  STRSTR  **
+* searches for a String in a String
+
+PROC STRSTR
+IN
+  ARRAY
+  [
+  STR1(255)=$AA00,STR2(255)=$AB00
+  ]
+OUT
+  BYTE
+  [
+  SPOS
+  ]
+LOCAL
+  BYTE
+  [
+  I,J,K,L1,L2,DLEN,S1
+  ]
+BEGIN
+  .STRLEN(STR2,L2)
+  IF L2<>0
+    .STRLEN(STR1,L1)
+    IF L1<>0
+      SUB(L1,L2,DLEN)  
+      I=0
+      REPEAT
+        J=0
+        K=I
+        SPOS=I
+        REPEAT
+          S1=STR1(K)
+          IF S1<>STR2(J)
+            SPOS=255
+          ENDIF
+          K+
+          J+
+        UNTIL STR2(J)=0
+        I+
+        IF SPOS<>255
+          I=DLEN
+        ENDIF
+      UNTIL I=DLEN
+    ELSE
+      SPOS=255
+    ENDIF
+  ELSE
+    SPOS=255
+  ENDIF
+ENDPROC
+
+
+**  STRCPY  **
+* copies a part of a String to 
+* a specific position of an other
+* String
+
+PROC STRCPY
+IN
+  ARRAY
+  [
+  STR1(255)=$AA00,STR2(255)=$A900
+  ]
+  BYTE
+  [
+  A,E,SPOS
+  ]
+OUT
+  ARRAY
+  [
+  STR1(255)=$AA00
+  ]
+LOCAL
+  BYTE
+  [
+  I,DL,EPOS,S,L2,L1
+  ]
+BEGIN
+  .STRLEN(STR2,L2)
+  SUB(E,A,DL)
+  IF DL>L2
+    DL=L2
+  ENDIF
+  .STRLEN(STR1,L1)
+  IF SPOS<=L1
+    ADD(SPOS,DL,EPOS)
+    I=0
+    REPEAT
+      S=STR2(I)
+      STR1(SPOS)=S
+      I+
+      SPOS+
+    UNTIL SPOS=EPOS
+  ENDIF
+ENDPROC
+
+
+**  STRWRT  **
+* writes a String into the RAM
+
+PROC STRWRT
+IN
+  ARRAY
+  [
+  STR(255)=$AA00
+  ]
+  WORD
+  [
+  ADR
+  ]
+LOCAL
+  BYTE
+  [
+  LEN
+  ]
+BEGIN
+  .STRLEN(STR,LEN)
+  LEN+
+  BMOVE($AA00,ADR,LEN)
+ENDPROC
+
+
+**  STRRED  **
+* reads a String from RAM
+
+PROC STRRED
+IN
+  WORD
+  [
+  ADR
+  ]
+OUT
+  ARRAY
+  [
+  STR(255)=$AA00
+  ]
+LOCAL
+  BYTE
+  [
+  LEN
+  ]
+BEGIN
+  BMOVE(ADR,$AA00,255)
+ENDPROC
+  
+ÿ

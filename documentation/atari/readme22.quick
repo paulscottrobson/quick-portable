@@ -1,0 +1,154 @@
+
+þ
+
+Quick-Sourcetext
+D1:README22.QIK 
+----------------
+Length: $0AEA
+
+Free  : $6C81
+----------------
+
+
+
+QUICK V2.2
+
+(C) PPP/Raindorf Soft 1989-1995
+
+
+
+Welcome to the new version of QUICK!
+
+The QUICK programming language has
+been sold for more than 6 years now.
+Many upgrades have been released
+during this time. Version 2.2 is a
+very interesting one, because this
+time we have optimized some routines.
+There are two advantages to this: 
+
+- the programs are faster now
+- and they are shorter
+
+This is achieved by a new Runtime
+Library. To avoid confusion, we changed
+the name of this file from RUNTIME.OBJ
+to RTL.OBJ. This is the new and shorter
+version.
+
+So the RTL only occupies the memory
+from $4100 to $4BFF. That way the
+RAM between $4BFF and $4FFD is free
+now for any other data.
+
+These addresses are not fixed (esp.
+the end could get even lower in the
+next version). To find out the exact
+end, you can use some of the newly
+invented RTL variables:
+
+
+
+RTL variables
+
+$4142 RTLVER
+
+The version of the RTL.OBJ file. The
+current version is 13, the old number
+was 104.
+
+$4143/4144 RTLEND
+
+The first free byte after the end of
+the RTL area. All the memory from this
+address to $4FFD is free.
+
+$4145 PNUMEND
+
+The ASCII value of the character that
+is printed after printing a number.
+Normally it is 32 (space). Use 0 for
+printing nothing.
+
+$4146 PROMPT
+
+The ASCII value of the character
+printed at the input command. 0 
+disables the printing.
+
+$84 SIGMODE
+
+If QUICK is in SIGN mode it is 0, 
+otherwise 1.
+
+$93/94 DIVMOD
+
+Immediately after a division, the
+remainder of the division is stored
+here:
+
+DIV(19,A,A)
+B=DIVMOD
+
+Now B has the value of the remainder.
+
+$4106 Calculated Jumps
+
+At this position of the jump table, 
+the JMP assembler command is placed.
+Calling this address calls a 
+subroutine.
+The subroutine's address is stored in
+$B004.
+
+WORD
+[
+ADR=208
+JMPADR=$B004
+]
+...
+VADR(MYROUTINE)
+JMPADR=ADR
+CALL(0,0,0,$4106)
+
+Now MYROUTINE is called. This gets more
+interesting if you need to calculate
+the address of your routine.
+
+
+Compatibility
+
+All Byte variables will now be printed
+in SIGN mode. So the OLD command is not
+supported anymore. This means that
+some programs that were written for
+QUICK 1.6 could perhaps not run 
+correctly, if they are compiled with
+QUICK v2.2. 
+
+Programs that somehow changed some-
+thing in the RUNTIME.OBJ area, or that
+rely on special addresses within the
+RUNTIME area could perhaps crash.
+Normally there should not be any such
+programs.
+
+If you have problems compiling a 
+program with QUICK v2.2, or if it does
+not run correctly after compiling,
+you can use the side B of this disk.
+Here you can find an additional
+version of QUICK V2.1.
+
+The extension of the compiled 
+QUICK programs was changed from OBJ
+to COM. So, compiling SINDEMO.QIK will
+result in an executable file called
+SINDEMO.COM instead of SINDEMO.OBJ.
+
+
+
+Harald Schoenfeld
+Florian Baumann
+
+ÿ

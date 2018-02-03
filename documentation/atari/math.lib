@@ -1,0 +1,313 @@
+
+þ
+
+Quick-Sourcetext
+D1:MATH.LIB     
+----------------
+Length: $09E3
+
+Free  : $6D88
+----------------
+
+
+
+* QUICK V2.1
+* Standard Mathematic Library
+* (c) RAINDORF SOFT 5/89 & 1/90 & 3/92
+* international version 11/92
+
+* uses FR0 (212) and FR1 (224) as
+* internal floatingpoint registers
+
+
+** IFP **
+* converts Word to Float
+
+PROC IFP
+IN
+  WORD
+  [
+  INT=212
+  ]
+OUT
+  ARRAY
+  [
+  FERG(6)=212
+  ]
+BEGIN
+  CALL(0,0,0,55722)
+ENDPROC
+
+
+** FPI **
+* converts Float to Word
+
+PROC FPI
+IN
+  ARRAY
+  [
+  FR0(6)=212
+  ]
+OUT
+  WORD
+  [
+  BYTE=212
+  ]
+BEGIN
+  CALL(0,0,0,55762)
+ENDPROC
+
+
+** AFP **
+* converts ASCII to Float
+
+PROC AFP
+IN
+  ARRAY
+  [
+  BUFF(127)=1408
+  ]
+OUT
+  ARRAY
+  [
+  FR0(6)=212
+  ]
+LOCAL
+  WORD
+  [
+  INBUFF=243
+  ]
+  BYTE
+  [
+  CIX=242
+  ]
+BEGIN
+  INBUFF=1408
+  CIX=0
+  CALL(0,0,0,55296)
+ENDPROC
+
+
+** DFP **
+* converts Float-Data to Float
+
+PROC DFP
+IN
+  BYTE
+  [
+  A=212,B=213,C=214
+  D=215,E=216,F=217
+  ]
+OUT
+  ARRAY
+  [
+  FP(6)=212
+  ]
+BEGIN
+ENDPROC
+
+
+** FASC **
+* converts Float to ASCII
+
+PROC FASC
+IN
+  ARRAY
+  [
+  FR0(6)=212
+  ]
+OUT
+  ARRAY
+  [
+  LBUFF(127)=1408
+  ]
+LOCAL
+  BYTE
+  [
+  Q,I
+  ]
+BEGIN
+  CALL (0,0,0,55526)
+  I=0
+  REPEAT
+    Q=LBUFF(I)
+    I+
+  UNTIL Q>127
+  I-
+  SUB(Q,128,Q)
+  LBUFF(I)=Q
+  I+
+  LBUFF(I)=0
+ENDPROC
+
+
+** FADD **
+* Adds 2 Floats
+
+PROC FADD
+IN
+  ARRAY
+  [
+  FR0(6)=212,FR1(6)=224
+  ]
+OUT
+  ARRAY
+  [
+  FERG(6)=212
+  ]
+BEGIN
+  CALL(0,0,0,55910)
+ENDPROC
+
+
+** FSUB **
+* Subtracts 2 Floats
+
+PROC FSUB
+IN
+  ARRAY
+  [
+  FR0(6)=212,FR1(6)=224
+  ]
+OUT
+  ARRAY
+  [
+  FERG(6)=212
+  ]
+BEGIN
+  CALL(0,0,0,55904)
+ENDPROC
+
+
+** FMUL **
+* Multiplies 2 Floats
+
+PROC FMUL
+IN
+  ARRAY
+  [
+  FR0(6)=212,FR1(6)=224
+  ]
+OUT
+  ARRAY
+  [
+  FERG(6)=212
+  ]
+BEGIN
+  CALL(0,0,0,56027)
+ENDPROC
+
+
+** FDIV **
+* Divides 2 Floats
+
+PROC FDIV
+IN
+  ARRAY
+  [
+  FR0(6)=212,FR1(6)=224
+  ]
+OUT
+  ARRAY
+  [
+  FERG(6)=212
+  ]
+BEGIN
+  CALL(0,0,0,56104)
+ENDPROC
+
+
+** FCMP **
+* finds out if Float<0, F=0 oder F>0
+
+PROC FCMP
+IN
+  ARRAY
+  [
+  F(6)=212
+  ]
+OUT
+  BYTE
+  [
+  E
+  ]
+LOCAL
+  BYTE
+  [
+  I,H
+  ]
+BEGIN
+  E=F(0)
+  AND(E,128,E)
+  IF E<>0
+    E=0
+    JUMP(382)
+  ENDIF
+  I=0
+  E=1
+  REPEAT
+    H=F(I)
+    IF H<>0
+      E=2
+    ENDIF
+    I+
+  UNTIL I=6
+
+-382
+ENDPROC
+
+
+** FPRT **
+* Prints a Float
+
+PROC FPRT
+IN
+  ARRAY
+  [
+  FR(6)
+  ]
+LOCAL
+  ARRAY
+  [
+  Z(17),H(2)
+  ]
+BYTE
+  [
+  Q,I
+  ]
+BEGIN
+  .FASC(FR,Z)
+  Q=FR(0)
+  AND(Q,128,Q)
+  IF Q=128
+    ?("-");
+  ENDIF
+  Q=Z(0)
+  IF Q=45
+    I=1
+  ELSE
+    I=0
+  ENDIF
+  IF Q=46
+    ?("0");
+  ENDIF
+  Q=FR(0)
+  IF Q<>0
+    REPEAT
+      Q=Z(I)
+      I+
+    UNTIL Q<>48
+    I-
+  ENDIF
+  REPEAT
+  Q=Z(I)
+  IF Q<>0
+    H(0)=Q
+    H(1)=0
+    ?(H);
+    I+
+  ENDIF
+  UNTIL Q=0
+ENDPROC
+
+ÿ

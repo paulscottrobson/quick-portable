@@ -1,0 +1,87 @@
+
+þ
+
+Quick-Sourcetext
+D1:SUNRISE.QIK  
+----------------
+Length: $04B1
+
+Free  : $72BA
+----------------
+
+
+
+* QUICK V2.1
+* little graphics demo "SUNRISE"
+* (c) '92 HYPERON SOFT
+
+INCLUDE
+  [
+  D:GRAPH.LIB
+  ]
+
+BYTE
+  [
+  COL2=53271
+  BACKGR=53274
+  SYNC=54282
+  DMA=559
+  HIMMEL=712
+  I,WIESE,Y
+  ]
+
+WORD
+  [
+  DL=560
+  ADR,X
+  ]
+
+MAIN
+  .GRAPHICS (31)  ;Graphics 15+16
+  DMA=0           ;Screen off
+  SETCOL(1,14,14) ;Set new colours
+  SETCOL(2,3,10)
+  WIESE=210
+  HIMMEL=128
+
+  ADD(DL,108,ADR) ;insert DLI-command
+  POKE(ADR,142)   ;into Display list
+  DLI(HORIZONT)   ;DLI on
+
+  DMA=34          ;Screen on
+
+  COLOR(2)        ;Draw the sun
+  .DISC(60,142,40)
+  CUT(40,103,200,183,30000) ;and cut
+*                           ;it out
+  COLOR(3)
+  .FRAME(4,8,155,184)   ;Draw the frame
+  .FILL(2,2,0,0,159,191)   ;and fill it
+
+  X=40
+  Y=102
+  I=0
+  REPEAT
+    PASTE(0,X,Y,30000) ;Copy sun to 
+    ADD(X,2,X)         ;the screen
+    Y-            ;New position for the
+    Y-            ;sun next time
+    I+
+    IF I=5
+      WIESE+      ;...it's getting
+      HIMMEL+     ;brighter
+      I=0  
+    ENDIF
+  UNTIL Y=26
+ENDMAIN
+
+INTER HORIZONT
+BEGIN
+  PUSH          ;save CPU-registers
+  SYNC(1)       ;Synchronise
+  BACKGR=WIESE  ;change the colours
+  COL2=WIESE
+  PULL          ;restore registers
+ENDDLI
+
+ÿ

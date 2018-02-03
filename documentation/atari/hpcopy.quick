@@ -1,0 +1,67 @@
+
+þ
+
+Quick-Sourcetext
+D1:HPCOPY.QIK   
+----------------
+Length: $0257
+
+Free  : $7514
+----------------
+
+
+
+* Demo program for the HPCOPY Library
+* for QUICK Support Disk #2
+* (c) H.Schoenfeld
+
+INCLUDE
+[
+D1:HPCOPY.LIB
+]
+
+BYTE
+[
+FILE,RES
+]
+WORD
+[
+ BS=88
+]
+
+MAIN
+
+  CLOSE(6)
+  OPEN(6,12,0,"E:")
+
+  ?("Hard copy to printer (0)")
+  ?("or file (1) ?")
+  INPUT (FILE)
+
+  ?("Which resolution?")
+  ?("0 =  75dpi")
+  ?("1 = 100dpi")
+  ?("2 = 150dpi")
+  ?("3 = 300dpi")
+  INPUT(RES)
+
+  CLOSE(6)
+  OPEN(6,12,24,"S:")
+  SETCOL(1,0,0)
+  SETCOL(2,0,15)
+
+  OPEN(1,4,0,"D:TEST.PIC")
+  BGET(1,7680,BS)
+  CLOSE(1)
+
+  IF FILE=1
+    .HPCOPY(RES,"D:HPCOPY.DAT")
+  ELSE
+    .HPCOPY(RES,"P:")
+  ENDIF
+
+  ?("Done")
+
+ENDMAIN
+
+ÿ

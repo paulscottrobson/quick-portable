@@ -1,0 +1,175 @@
+
+þ
+
+Quick-Sourcetext
+D1:DIR.QIK      
+----------------
+Length: $068C
+
+Free  : $70DF
+----------------
+
+
+
+* Directory Printer
+* (c) Hyperon Soft 10'90
+* (p) Harald Schoenfeld
+
+
+BYTE
+[
+NUMBER,PRT_FLAG
+]
+ARRAY
+[
+DRIVE(4),NAME(16),CLS(2)
+]
+
+MAIN
+
+* String for clearing screen
+
+  DATA(CLS)
+  [
+  125,0
+  ]
+  CLOSE(6)
+  OPEN(6,12,0,"E:")
+
+-1
+
+  REPEAT
+
+    ?(CLS)
+    ?
+    ?("Directory Printer")
+    ?
+    ?("Drive number  [1...8]:");
+    INPUT(NUMBER)
+    ?("Name  [A...Z0...9?*]:");
+    INPUT(NAME)
+    ?
+    ?("Use printer [0/1]: ");
+    INPUT(PRT_FLAG)
+    ?
+
+    .PATH(NUMBER,DRIVE)
+
+    .DIRECT(DRIVE,NAME,PRT_FLAG)
+
+  UNTIL 0=1
+
+ENDMAIN
+
+
+* Setup drive path "Dx:"
+* from the drive number
+
+PROC PATH
+IN
+BYTE
+[
+NR
+]
+OUT
+ARRAY
+[
+DRIVE(4)
+]
+BEGIN
+
+  IF NR>8
+    JUMP(1)
+  ELSE
+    IF NR<1
+      JUMP(1)
+    ENDIF
+  ENDIF
+
+* Get character value from integer
+* value
+
+  DRIVE="D :"
+  ADD(NR,48,NR)
+  DRIVE(1)=NR
+
+ENDPROC
+
+
+* Setup total drive path like
+* "aaaaaaaa.eee" with wildcards
+* "?*".
+* Open directory, read byte by byte
+* and print.
+* If ERR>127 the end of the directory
+* is reached
+
+PROC DIRECT
+IN
+ARRAY
+[
+D(4),FN(16)
+]
+BYTE
+[
+PF
+]
+LOCAL
+BYTE
+[
+ERR=851,DUMMY
+]
+WORD
+[
+INP_ADR=208
+]
+ARRAY
+[
+DIR(20),INP(3)
+]
+
+BEGIN
+
+* Get address of the INP string
+* (written to INP_ADR), so the
+* BGET command can read directly
+* to the string. 
+  VADR(INP)
+
+* One blank to INP
+  INP=" "
+
+* Setup path from D and FN
+  DIR=D
+  DIR(3)=FN
+
+* Open directory
+  CLOSE(1)
+  OPEN(1,6,0,DIR)
+
+* Open printer channel
+  IF PF=1
+    CLOSE(5)
+    OPEN(5,8,0,"P:")
+  ENDIF
+
+* Read characters until an error occurs
+* and print
+  WHILE ERR<128
+    BGET(1,1,INP_ADR)
+    ?(INP);    
+    IF PF=1
+      LPT(INP);
+    ENDIF
+  WEND
+
+  CLOSE(1)
+
+  ?
+  ?("             < RETURN ");
+  INPUT(DUMMY)
+
+ENDPROC
+
+
+ÿ

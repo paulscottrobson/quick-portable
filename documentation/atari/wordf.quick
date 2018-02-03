@@ -1,0 +1,85 @@
+
+þ
+
+Quick-Sourcetext
+D1:WORDF.QIK    
+----------------
+Length: $0328
+
+Free  : $7443
+----------------
+
+
+
+*Simulation of a one dimensional
+*very long array
+
+WORD
+[
+FELD       *Start address of byte array
+LANG       *Length of array
+I,A
+]
+
+MAIN
+
+CLOSE(6)
+OPEN(6,12,0,"E:")
+
+FELD=40960  *Start adr
+LANG=800    *length
+
+  I=0
+  A=800
+  REPEAT          *fill wih values 0
+    .SETFELD(I,A) *to 800
+    ADD(I,1,I)    *
+    SUB(A,1,A)    *I defines which WORD
+  UNTIL I=LANG    *is set to A
+
+  I=0
+  REPEAT          *Show the values
+    .GETFELD(I,A) *again
+    ADD(I,1,I)
+    ?(A);
+  UNTIL I=LANG
+
+ENDMAIN
+
+
+*Set Feld(Index) to value WERT
+
+PROC SETFELD
+IN
+WORD
+[
+INDEX
+WERT
+]
+BEGIN
+  ASLW(INDEX)
+  ADD(FELD,INDEX,INDEX)
+  DPOKE(INDEX,WERT)
+ENDPROC
+
+
+*Sets value WERT to Feld(Index)
+
+PROC GETFELD
+IN
+WORD
+[
+INDEX
+]
+OUT
+WORD
+[
+WERT
+]
+BEGIN
+  MULT(INDEX,2,INDEX)
+  ADD(FELD,INDEX,INDEX)
+  DPEEK(INDEX,WERT)
+ENDPROC
+
+ÿ

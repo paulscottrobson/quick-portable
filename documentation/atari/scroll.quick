@@ -1,0 +1,285 @@
+
+þ
+
+Quick-Sourcetext
+D1:SCROLL.QIK   
+----------------
+Length: $0DF6
+
+Free  : $6975
+----------------
+
+
+
+* QUICK V2.1
+* Fine-Scrolling Demo
+* (c) 7'90 by HYPERON SOFT
+* published by PPP Germany
+
+* moves a Text over the screen
+* by using the fine scrolling
+* features of the ATARI
+
+* So it works without assembler...
+
+BYTE
+  [
+  DMA=559,HSCROL=54276 ;OS-register
+  FS,Z,LEN
+  ACOL=53271        ;Hardware col.reg.
+  BCOL=711          ;Shadow col.reg.
+  ]
+
+WORD
+  [
+  SDLSTL=560       ;DPL address
+  SCRADR=$A410     ;Address of SCROLL
+  *                ;(in the DPL)
+  ]
+
+ARRAY
+  [
+  BLANK(25)
+  TEXT(22)=$A500,TEXT1(22)=$A520
+  SCROLL(255)=$A540
+  ]
+
+MAIN
+
+  DMA=0          ;Screen off
+  BCOL=$A8       ;blue-green Text
+
+* Build Display List (DPL)
+
+  DATA($A400)
+  [
+    $70,$70,$70,$70,$70  ;empty
+    $70,$70,$70,$70      ;lines
+    $46,$00,$A5    ;Gr. 2 at TEXT
+    $70,$70,$F0    ;empty lines + DLI
+    $57,$40,$A5    ;Scrolling at SCROLL
+    $70,$70,$70    ;empty lines
+    $46,$20,$A5    ;Gr. 2 at TEXT1
+    $41,$00,$A4    ;Pointer back to the
+  *                ;DPL's beginning
+  ]
+
+  BLANK="                        "
+
+* normal text
+
+  TEXT="QUICK SCROLLING DEMO"
+  TEXT1="  BY HYPERON SOFT  "
+
+* build up
+* scroll text with blanks
+
+  SCROLL="FINESCROLLING IS NO PROBLEM"
+
+* join strings
+  .STRCAT(SCROLL," IN QUICK",SCROLL)
+
+* Put blanks at the beginning
+
+  .STRCAT(BLANK,SCROLL,SCROLL)
+
+* calculate the length 
+
+  .STRLEN(SCROLL,LEN)
+
+* put blanks at the end
+
+  .STRCAT(SCROLL,BLANK,SCROLL)
+
+* convert texts to internal char. code
+
+  .STRLWRINV(TEXT,TEXT)
+  .STRLWRINV(TEXT1,TEXT1)
+  .STRLWRNOR(SCROLL,SCROLL)
+
+  FS=7         ;starting scroll value
+  Z=0          ;char. counter
+
+  DLI(FARBEN)
+  VBI(SCROLL)
+
+  SDLSTL=$A400 ;Set DPL's address
+  DMA=62       ;Screen on
+
+ENDMAIN
+
+
+* Fine-Scrolling routine
+* called 50 (or 60) times a second
+
+INTER SCROLL
+BEGIN
+  FS-          ;Finescroll-counter
+*               minus one
+  IF FS=255    ;If scrolled by a whole
+    FS=7       ;char then counter back
+*              ;to starting value
+*              ;and increase the
+    ADD(SCRADR,1,SCRADR) ;string adr.
+*              ;in the DPL
+    Z+
+    IF Z=LEN   ;If scrolled to the end
+      Z=0      ;of the string then
+      SCRADR=$A540 ;re-start it
+    ENDIF
+  ENDIF
+
+  HSCROL=FS    ;write the scroll value 
+*              ;into the OS register
+  ACOL=$82     ;reset the color
+
+ENDVBI
+
+
+* Change the color of the scrolling
+* text by changing the hardware
+* col. reg.
+
+INTER FARBEN
+BEGIN
+  SYNC(6)
+  ACOL=$84
+  SYNC(2)
+  ACOL=$88
+  SYNC(2)
+  ACOL=$8A
+  SYNC(2)
+  ACOL=$8E
+ENDDLI
+
+
+* cat two strings
+
+PROC STRCAT
+IN
+ARRAY
+[
+STR1(255)=$AB00,STR2(255)=$A900
+]
+OUT
+ARRAY
+[
+STR3(255)=$AA00
+]
+LOCAL
+BYTE
+[
+I,J,S
+]
+BEGIN
+  .STRLEN(STR1,I)
+  J=0
+  STR3=STR1
+  REPEAT
+    S=STR2(J)
+    STR3(I)=S
+    J+
+    I+
+    IF I=255
+      S=0
+    ENDIF
+  UNTIL S=0
+ENDPROC
+
+
+* Calculate the length of a string
+
+PROC STRLEN
+IN
+ARRAY
+[
+STR(255)=$A800
+]
+OUT
+BYTE
+[
+LEN
+]
+BEGIN
+  LEN=0
+  WHILE STR(LEN)<>0
+    LEN+
+  WEND
+ENDPROC
+
+
+* Upper case to lower case
+
+PROC STRLWRNOR
+IN
+ARRAY
+[
+STR1(255)=$A800
+]
+OUT
+ARRAY
+[
+STR2(255)=$A900
+]
+LOCAL
+BYTE
+[
+I,S
+]
+BEGIN
+  I=0
+  REPEAT
+    S=STR1(I)
+    IF S>64
+      IF S<91
+        ADD(S,32,S)
+      ENDIF
+    ENDIF
+    IF S=32
+      STR2(I)=0
+    ELSE
+      STR2(I)=S
+    ENDIF
+    I+
+  UNTIL S=0
+ENDPROC
+
+
+* Upper case to lower and invert
+
+PROC STRLWRINV
+IN
+ARRAY
+[
+STR1(255)=$A800
+]
+OUT
+ARRAY
+[
+STR2(255)=$A900
+]
+LOCAL
+BYTE
+[
+I,S
+]
+BEGIN
+  I=0
+  REPEAT
+    S=STR1(I)
+    IF S>64
+      IF S<91
+        ADD(S,32,S)
+      ENDIF
+    ENDIF
+    IF S=32
+      STR2(I)=128
+    ELSE
+      ADD(S,128,S)
+      STR2(I)=S
+    ENDIF
+    I+
+  UNTIL S=128
+ENDPROC
+
+ÿ

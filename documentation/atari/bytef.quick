@@ -1,0 +1,90 @@
+
+þ
+
+Quick-Sourcetext
+D1:BYTEF.QIK    
+----------------
+Length: $02D9
+
+Free  : $7492
+----------------
+
+
+
+*Simulation of a one dimensional
+*very long BYTE Arrays.
+
+BYTE
+[
+A
+]
+WORD
+[
+FELD
+LANG
+I
+]
+
+MAIN
+
+CLOSE(6)
+OPEN(6,12,0,"E:")
+
+FELD=40960
+LANG=800
+
+  I=0
+  A=0
+  REPEAT          *fill with values
+    .SETFELD(I,A) *from 0 to 255
+    ADD(I,1,I)    *
+    A+            *I defines in which
+  UNTIL I=LANG    *element A is written
+
+  I=0
+  REPEAT          *Show the values
+    .GETFELD(I,A) *again
+    ADD(I,1,I)
+    ?(A);
+  UNTIL I=LANG
+
+ENDMAIN
+
+
+*Sets Feld(Index) to value WERT
+
+PROC SETFELD
+IN
+WORD
+[
+INDEX
+]
+BYTE
+[
+WERT
+]
+BEGIN
+  ADD(FELD,INDEX,INDEX)
+  POKE(INDEX,WERT)
+ENDPROC
+
+
+*Sets WERT to value of Feld(Index)
+
+PROC GETFELD
+IN
+WORD
+[
+INDEX
+]
+OUT
+BYTE
+[
+WERT
+]
+BEGIN
+  ADD(FELD,INDEX,INDEX)
+  PEEK(INDEX,WERT)
+ENDPROC
+
+ÿ

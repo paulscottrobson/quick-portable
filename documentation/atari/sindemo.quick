@@ -1,0 +1,75 @@
+
+þ
+
+Quick-Sourcetext
+D1:SINDEMO.QIK  
+----------------
+Length: $049A
+
+Free  : $72D1
+----------------
+
+
+
+* QUICK V2.1
+* Library-Demo: SINUS
+* (c) '92 by Hyperon Soft
+* published by PPP Germany
+
+* calculates SIN(x) for -7<x<13
+* using routines of the numeric
+* and math library and draws the
+* function using the graphics
+* library
+
+INCLUDE
+[
+  D:MATH.LIB    ;load
+  D:NUMERIC.LIB ;all
+  D:GRAPH.LIB   ;libraries
+]
+
+WORD
+  [
+  I,K,Y
+  ]
+ARRAY
+  [
+  F1(6),F16(6),F7(6) ;Arrays as float
+  F13(6),F40(6)      ;variables
+  ]
+
+MAIN
+  SIGN
+
+  .GRAPHICS(8)    ;HiRes Graphics
+
+*                    ;copy...
+  .AFP("0.0625",F16) ;1/16 in F16
+  .AFP("1",F1)       ;1 in F1
+  .AFP("-6.28",F7)   ;-6.28 in F7
+  .AFP("40",F40)     ;40 in F40
+
+  COLOR(1)          ;point-colour
+  SETCOL(1,0,0)     ;Set new colours
+  SETCOL(2,0,10)    ;for the screen
+
+  I=0         ;Loop index
+  REPEAT
+    .SIN(F7,F13)       ;Sine(F7) in F13
+    .FMUL(F13,F40,F13) ;mult. by 40
+    .FADD(F13,F40,F13) ;add 40
+    .FPI(F13,K)    ;Floatvar. F13
+*                  in integer var. K
+    SUB(120,K,Y)   ;subtr. from 120
+    PLOT(I,Y)        ;and plot
+
+    .FADD(F7,F16,F7)  ;F7 plus F16
+    ADD(I,1,I)        ;add 1 to I
+
+  UNTIL I>318         ;until the right
+*                   ;border is reached
+
+ENDMAIN
+
+ÿ

@@ -1,0 +1,377 @@
+
+þ
+
+Quick-Sourcetext
+D1:SHOWPIC.QIK  
+----------------
+Length: $0E90
+
+Free  : $68DB
+----------------
+
+
+
+* (c) Hyperon Soft 10'90
+* (p) Harald Schoenfeld
+
+* Shows all pictures on a disk
+* on graphics 8
+
+BYTE
+[
+ERR=851              * I/O error
+CONSOL=53279         * function keys
+]
+WORD
+[
+VAR_ADR=208
+SAVMSC=88,LOADADR    * OS addresses
+DIR_ZEIG,DIR_END     * Directory buffer
+DIR_ANF
+TIM=540,TIM2=542     * OS timer
+]
+ARRAY
+[
+DRIVE(6),WILD(16),FILENAME(20)
+PATH(20)
+]
+
+MAIN
+
+* Standard path
+
+  DRIVE="D1:"
+  WILD="*.PIC"
+  DIR_ANF=$6000
+  LOADADR=$7000
+
+-1
+
+* Get path
+
+  .START
+
+* Setup complete path
+
+  PATH=DRIVE
+  PATH(3)=WILD
+
+* Read the complete directory
+
+  .DIROPEN(PATH)
+
+* Open graphics 8
+
+  CLOSE(6)
+  OPEN(6,0,8,"S:")
+  SETCOL(1,0,0)
+  SETCOL(2,0,14)
+  TIM=0
+
+* Load and display files
+
+  WHILE ERR<128
+
+    .NEXTFILE(FILENAME)
+
+    IF ERR<128
+
+* Load and wait
+
+      .LOADFILE(FILENAME,DRIVE)
+      .WAIT
+
+      IF ERR<128
+        .FADE
+        .SHOW
+
+* Setup wait
+        TIM=400
+      ENDIF
+
+    ENDIF
+
+  WEND
+
+* Wait and restart
+  .WAIT
+  .FADE
+
+  JUMP(1)
+
+ENDMAIN
+
+
+* Open directory.
+* If no error, load directory
+
+PROC DIROPEN
+IN
+ARRAY
+[
+D(20)
+]
+BEGIN
+
+* Open directory
+
+  CLOSE(1)
+  OPEN(1,6,0,D)
+
+  IF ERR>127
+
+    ?("Drive not ready")
+    TIM=300
+    .WAIT
+
+  ELSE
+
+* Read until I/O error occurs
+
+    DIR_ZEIG=DIR_ANF
+    REPEAT
+      BGET(1,1,DIR_ZEIG)
+      ADD(DIR_ZEIG,1,DIR_ZEIG)
+    UNTIL ERR>127
+
+* Keep end of dir. in buffer
+    SUB(DIR_ZEIG,18,DIR_END)
+
+* Pointer to dir buffer start
+    DIR_ZEIG=DIR_ANF
+
+  ENDIF
+
+  CLOSE(1)
+
+ENDPROC
+
+* Wait until TIM gets to zero, breaks
+* if CONTROL is pressed
+
+PROC WAIT
+BEGIN
+
+  REPEAT
+    IF CONSOL<>7
+      JUMP(1)
+    ENDIF
+  UNTIL TIM=0
+
+ENDPROC
+
+
+* Waits until TIM2 gets to 0
+
+PROC WAIT2
+BEGIN
+  REPEAT
+  UNTIL TIM2=0
+ENDPROC
+
+
+* Start message and inits
+
+PROC START
+LOCAL
+BYTE
+[
+SET
+]
+BEGIN
+
+  REPEAT
+
+* Open editor screen
+
+    CLOSE(6)
+    OPEN(6,12,0,"E:")
+    SETCOL(2,0,14)
+    SETCOL(1,0,0)
+
+    ?
+    ?("PICQUICK GRAFIK 8")
+    ?
+    ?("Shows all files with the name")
+    ?(DRIVE,WILD)
+    ?("on graphics 8 screen")
+    ?
+    ?(" 0 = START / 1 = SETUP ")
+    ?
+
+    INPUT(SET)
+
+    IF SET=1
+      ?("DRIVE:");
+      INPUT(DRIVE)
+      ?("NAME :");
+      INPUT(WILD)
+    ENDIF
+
+  UNTIL SET=0  
+
+ENDPROC
+
+
+* Get next file name from dir buffer
+* and return it in FNAME
+
+PROC NEXTFILE
+OUT
+ARRAY
+[
+FNAME(20)
+]
+LOCAL
+BYTE
+[
+I,J,CH
+]
+ARRAY
+[
+BUFFER(16)
+]
+BEGIN
+
+
+* End of dir -> error
+  IF DIR_ZEIG>=DIR_END
+
+    ERR=128
+
+  ELSE
+
+* Read byte by byte from buffer, copy
+* it into FNAME if not " " or "*".
+* Inserts a "." at position 10
+
+    I=0
+    J=0
+    REPEAT
+
+      PEEK(DIR_ZEIG,CH)
+      ADD(DIR_ZEIG,1,DIR_ZEIG)
+      I+
+
+      IF CH<>32
+        IF CH<>42
+          FNAME(J)=CH
+          J+
+        ENDIF
+      ENDIF
+
+      IF I=10
+        FNAME(J)=46
+        J+
+      ENDIF
+
+* End of file name reached?
+
+    UNTIL CH=155
+
+* Forget "length in sectors"
+* (4 characters at the end of string)
+
+    SUB(J,4,J)
+    FNAME(J)=0
+
+* If "." is the last character -> 
+* forget it
+
+    J-
+    CH=FNAME(J)
+    IF CH=46
+      FNAME(J)=0
+    ENDIF
+
+  ENDIF
+
+ENDPROC
+
+
+* Fade out screen
+
+PROC FADE
+LOCAL
+BYTE
+[
+I
+]
+BEGIN
+
+  SETCOL(1,0,0)
+  I=15
+  REPEAT
+    I-
+    SETCOL(2,0,I)
+    TIM2=2
+    .WAIT2
+  UNTIL I=0
+
+ENDPROC
+
+
+* Copy picture to screen, fade in,
+* wait
+
+PROC SHOW
+LOCAL
+BYTE
+[
+I
+]
+BEGIN
+
+* Get picture from load buffer
+  BMOVE($7000,SAVMSC,7680)
+
+* Fade in
+  SETCOL(1,0,0)
+  I=0
+  REPEAT
+    I+
+    SETCOL(2,0,I)
+    TIM2=2
+    .WAIT2
+  UNTIL I=14
+
+ENDPROC
+
+
+* FNAME load
+
+PROC LOADFILE
+IN
+ARRAY
+[
+FNAME(20),DRIVE(4)
+]
+LOCAL
+BYTE
+[
+A,B
+]
+ARRAY
+[
+NAME(20)
+]
+BEGIN
+
+* DRIVE+FILENAME gives NAME
+
+  NAME=DRIVE
+  NAME(3)=FNAME
+
+* "Lade-BS" memory clear
+  CLR($70,30)
+
+* File Load
+  CLOSE(2)
+  OPEN(2,4,0,NAME)
+  BGET(2,7680,LOADADR)
+  CLOSE(2)
+
+ENDPROC
+
+
+ÿ

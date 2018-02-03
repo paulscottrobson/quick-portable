@@ -1,0 +1,219 @@
+
+þ
+
+Quick-Sourcetext
+D1:SORT.QIK     
+----------------
+Length: $080A
+
+Free  : $6F61
+----------------
+
+
+
+* String-Library Demo:
+* Straight Insertion Sort
+* (c) 1990 by RAINDORF SOFT
+*
+* Shows how to build a string array
+* and how to then sort it
+
+
+INCLUDE
+[
+D:STR.LIB
+]
+
+BYTE
+[
+SLEN      ;GLOBAL length of a string
+N         ;GLOBAL number of strings
+I
+]
+WORD
+[
+STRBASE   ;GLOBAL address of the string
+*          array
+STRADR
+]
+ARRAY
+[
+STR1(30)
+]
+
+MAIN
+
+  CLOSE(6)
+  OPEN(6,12,0,"E:")
+-1
+  SLEN=30
+  STRBASE=$7000
+  STRADR=STRBASE
+  N=10
+
+  ?
+  ?("String-Library Demo:")
+  STR1="INSERTION SORT"
+  .STRINV(STR1,STR1)
+  ?(STR1)
+  ?
+  ?("Type in 10 words")
+  ?("to be sorted.")
+  ?
+
+* put 10 strings at address $7000
+
+  I=0
+  REPEAT
+    INPUT(STR1)
+    .STRWRT(STR1,STRADR)
+    I+
+    ADD(STRADR,SLEN,STRADR)
+  UNTIL I=N
+
+  ?
+  ?("before:")
+  ?
+  .STRPRT
+
+  .SORT
+
+  ?
+  ?("after:")
+  ?
+  .STRPRT
+  ?
+
+JUMP(1)
+
+ENDMAIN
+
+
+* Sors N strings of length SLEN
+* at Address STRBASE
+
+PROC SORT
+LOCAL
+BYTE
+[
+INDEX,J,ERG
+]
+WORD
+[
+STRADR
+]
+ARRAY
+[
+H(30),H1(30),H2(30)
+]
+BEGIN
+
+  INDEX=1
+
+  REPEAT
+
+* H=ELEMENT(INDEX)
+
+    .SADR(INDEX,STRADR)
+    .STRRED(STRADR,H)
+    SUB(INDEX,1,J)
+
+* H1=ELEMENT(J)
+
+    .SADR(J,STRADR)
+    .STRRED(STRADR,H1)
+    .STRICMP(H1,H,ERG)
+
+* WHILE H1>H
+
+    WHILE ERG=2
+
+* H2=ELEMENT(J)
+
+      .SADR(J,STRADR)
+      .STRRED(STRADR,H2)
+
+* ELEMENT(J+1)=H2
+
+      ADD(STRADR,SLEN,STRADR)
+      .STRWRT(H2,STRADR)
+
+      J-
+
+* ERG=3 IF 0TH ELEMENT
+* OR H1<H2
+
+      IF J=255
+        ERG=3
+      ELSE
+        .SADR(J,STRADR)
+        .STRRED(STRADR,H1)
+        .STRICMP(H1,H,ERG)
+      ENDIF
+
+    WEND
+
+* ELEMENT(J+1)=H
+
+    J+
+    .SADR(J,STRADR)
+    J-
+    .STRWRT(H,STRADR)
+
+    INDEX+
+
+  UNTIL INDEX=N
+
+ENDPROC
+
+
+* Calculates the address of the i-th
+* string with length SLEN at
+* start address STRBASE
+
+PROC SADR
+IN
+BYTE
+[
+I
+]
+OUT
+WORD
+[
+ADR
+]
+BEGIN
+  MULT(I,SLEN,ADR)
+  ADD(ADR,STRBASE,ADR)
+ENDPROC
+
+
+* Prints N string of length SLEN
+* from starting address STRBASE
+
+PROC STRPRT
+LOCAL
+BYTE
+[
+I
+]
+WORD
+[
+ADR
+]
+ARRAY
+[
+STR(30)
+]
+BEGIN
+  ADR=STRBASE
+  I=0
+  REPEAT
+    .STRRED(ADR,STR)
+    ?(STR)
+    I+
+    ADD(ADR,SLEN,ADR)
+  UNTIL I=N
+ENDPROC
+
+ÿ

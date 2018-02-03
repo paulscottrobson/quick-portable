@@ -1,0 +1,78 @@
+
+þ
+
+Quick-Sourcetext
+D1:BCD.QIK      
+----------------
+Length: $0433
+
+Free  : $7338
+----------------
+
+
+
+* QUICK V2.1
+* Library-Demo:BCD-Conversion
+* (c) '92 Hyperon Soft
+* Published by PPP Germany
+
+* Inputs a number and converts
+* this integer to floating point.
+* Then the 6 Bytes of this Float
+* ARRAY are shown.
+* Use these numbers to create a
+* Float ARRAY using .DFP()
+
+INCLUDE
+[
+  D:MATH.LIB
+]
+
+BYTE
+  [
+  I,A,B0,B1,B2,B3,B4,B5
+  ]
+ARRAY
+  [
+  F1(6),F2(6),Z1(20)
+  ]
+
+MAIN
+  CLOSE(6)              ;Graphics 0
+  OPEN(6,12,0,"E:")
+
+  REPEAT
+    ?
+    PRINT("number");  ;read the number
+    INPUT(Z1)
+    .AFP(Z1,F1)       ;convert to Float
+    I=0
+    UNSIGN
+    ?("Byte representation:")
+    REPEAT
+      A=F1(I)  ;print the Float's BYTEs
+      ?(A)
+      I+
+    UNTIL I=6
+
+    ?("of the number:")
+    .FPRT(F1)       ;print number again
+    ?
+
+    B0=F1(0)        ;copy the BYTEs of
+    B1=F1(1)        ;the Float ARRAY
+    B2=F1(2)        ;into BYTE variabl.
+    B3=F1(3)
+    B4=F1(4)
+    B5=F1(5)
+
+* build the float by its BYTEs again
+    .DFP(B0,B1,B2,B3,B4,B5,F2)
+
+    .FPRT(F2)    ;print the new
+    ?            ;Float as proof
+
+  UNTIL 1=0      ;Loop
+ENDMAIN
+
+ÿ

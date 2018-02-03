@@ -1,0 +1,371 @@
+
+þ
+
+Quick-Sourcetext
+D1:NUMERIC.LIB  
+----------------
+Length: $0F2C
+
+Free  : $683F
+----------------
+
+
+
+* QUICK V2.1
+* Standard Numeric Library
+* (c) RAINDORF SOFT 5/89 & 3/92
+* international version 11/92
+
+* needs MATH.LIB
+* uses FR0 (212) as internal
+* floatingpoint register
+
+
+** EXP **
+* calculates EXP(Float)
+
+PROC EXP
+IN
+  ARRAY
+  [
+  FR0(6)=212
+  ]
+OUT
+  ARRAY
+  [
+  FERG(6)=212
+  ]
+BEGIN
+  CALL(0,0,0,56768)
+ENDPROC
+
+
+** EXP10 **
+* calculates 10^Float
+
+PROC EXP10
+IN
+  ARRAY
+  [
+  FR0(6)=212
+  ]
+OUT
+  ARRAY
+  [
+  FERG(6)=212
+  ]
+BEGIN
+  CALL(0,0,0,56780)
+ENDPROC
+
+
+** LOG **
+* calculates LN(Float)
+
+PROC LOG
+IN
+  ARRAY
+  [
+  FR0(6)=212
+  ]
+OUT
+  ARRAY
+  [
+  FERG(6)=212
+  ]
+BEGIN
+  CALL(0,0,0,57037)
+ENDPROC
+
+
+** LOG10 **
+* calculates LOG(Float)
+
+PROC LOG10
+IN
+  ARRAY
+  [
+  FR0(6)=212
+  ]
+OUT
+  ARRAY
+  [
+  FERG(6)=212
+  ]
+BEGIN
+  CALL(0,0,0,57041)
+ENDPROC
+
+
+** SQR **
+* calculates SQUAREROOT(Float)
+
+PROC SQR
+IN
+  ARRAY
+  [
+  A(6)
+  ]
+OUT
+  ARRAY
+  [
+  XN1(6)
+  ]
+LOCAL
+  BYTE
+  [
+  E
+  ]
+  ARRAY
+  [
+  XN(6),FERG(6),F5(6)
+  F0(6),F1(6)
+  ]
+BEGIN
+  .DFP(63,80,0,0,0,0,F5)
+
+  XN=A
+  E=XN(0)
+  AND(E,127,E)
+  A(0)=E
+  IF E>=64
+    SUB(E,64,E)
+    LSRB(E)
+    ADD(E,64,E)
+  ELSE
+    IF E<63
+      SUB(64,E,E)
+      LSRB(E)
+      SUB(64,E,E)
+    ENDIF
+  ENDIF
+  XN(0)=E
+
+  REPEAT
+    F0=A
+    F1=XN
+    .FDIV(F0,F1,FERG)
+    .FADD(FERG,F1,FERG)
+    .FMUL(FERG,F5,XN1)
+    .FSUB(XN,XN1,FERG)
+    .FCMP(FERG,E)
+    XN=XN1
+  UNTIL E=1
+ENDPROC
+
+
+** SIN **
+* calculates SINE(Float) in RAD
+
+PROC SIN
+IN
+  ARRAY
+  [
+  X(6)
+  ]
+OUT
+  ARRAY
+  [
+  Y(6)
+  ]
+LOCAL
+  BYTE
+  [
+  FLAG,FLAG1
+  ]
+  ARRAY
+  [
+  PI(6),PID2(6),PIM2(6),A2(6),A4(6)
+  X^2(6),ONE(6)
+  ]
+BEGIN
+  .DFP(64,1,0,0,0,0,ONE)
+  .DFP(-65,22,96,80,0,0,A2)
+  .DFP(62,118,16,0,0,0,A4)
+  .DFP(64,3,20,21,-110,101,PI)
+  .DFP(64,1,87,7,-106,50,PID2)
+  .DFP(64,6,40,49,-123,48,PIM2)
+
+  FLAG=0
+  .FCMP(X,FLAG1)
+  IF FLAG1=0
+    FLAG=128
+    FLAG1=X(0)
+    AND(FLAG1,127,FLAG1)
+    X(0)=FLAG1
+  ENDIF
+  .FSUB(X,PIM2,X^2)
+  .FCMP(X^2,FLAG1)
+  WHILE FLAG1<>0
+    X=X^2
+    .FSUB(X,PIM2,X^2)
+    .FCMP(X^2,FLAG1)
+  WEND
+
+  .FSUB(X,PI,X^2)
+  .FCMP(X^2,FLAG1)
+  IF FLAG1=2
+    EOR(FLAG,-128,FLAG)
+    .FSUB(X,PI,X)
+  ENDIF   
+
+  .FSUB(X,PID2,X^2)
+  .FCMP(X^2,FLAG1)
+  IF FLAG1=2
+    .FSUB(PID2,X^2,X)
+  ENDIF
+
+  .FMUL(X,X,X^2)
+  .FMUL(X^2,A4,Y)
+  .FADD(Y,A2,Y)
+  .FMUL(Y,X^2,Y)
+  .FADD(Y,ONE,Y)
+  .FMUL(Y,X,Y)
+
+  FLAG1=Y(0)
+  EOR(FLAG1,FLAG,FLAG1)
+  Y(0)=FLAG1
+ENDPROC
+
+
+** COS **
+* calculates COSINE(Float)
+
+PROC COS
+IN
+  ARRAY
+  [
+  X(6)
+  ]
+OUT
+  ARRAY
+  [
+  Y(6)
+  ]
+LOCAL
+  ARRAY
+  [
+  PID2(6)
+  ]
+BEGIN
+  .DFP(64,1,87,7,-106,50,PID2)
+  .FADD(X,PID2,X)
+  .SIN(X,Y)
+ENDPROC
+
+
+** ATN **
+* calculates ARCTANGENT(Float)
+
+PROC ATN
+IN
+  ARRAY
+  [
+  X(6)
+  ]
+OUT
+  ARRAY
+  [
+  S(6)
+  ]
+LOCAL
+  BYTE
+  [
+  E,F
+  ]
+  ARRAY
+  [
+  PI(6),PID2(6),PIM2(6),TWO(6)
+  ONE(6),X1(6)
+  YY(6),YF(6),T(6),I(6)
+  EPS(6),STR(10)
+  ]
+BEGIN
+  .DFP(64,1,0,0,0,0,ONE)
+  .DFP(64,2,0,0,0,0,TWO)
+  .DFP(64,1,87,7,-106,50,PID2)
+  .DFP(62,80,0,0,0,0,EPS)
+  X1=X
+  E=X1(0)
+  AND(E,127,E)
+  X1(0)=E
+  .FSUB(X1,ONE,X1)
+  .FCMP(X1,F)
+  IF F=0
+    I=ONE
+    S=X
+    YF=X
+    .FMUL(X,X,YY)
+
+-383
+    REPEAT
+      .FADD(I,TWO,I)
+      .FMUL(YF,YY,YF)
+      E=YF(0)
+      EOR(E,128,E)
+      YF(0)=E
+      .FDIV(YF,I,T)
+      .FADD(S,T,S)
+      X1=T
+      E=X1(0)
+      AND(E,127,E)
+      X1(0)=E
+      .FSUB(EPS,X1,X1)
+      .FCMP(X1,F)         
+    UNTIL F=2
+  ELSE
+    .FADD(X,ONE,X1)
+    .FCMP(X1,F)
+    IF F<2
+      I=ONE
+      .FDIV(ONE,X,YF)
+      E=YF(0)
+      EOR(E,128,E)
+      YF(0)=E
+      X1=PID2
+      E=X1(0)
+      EOR(E,128,E)
+      X1(0)=E
+      .FADD(X1,YF,S)
+      .FMUL(YF,YF,YY)
+      JUMP(383)
+    ELSE
+      I=ONE
+      .FDIV(ONE,X,YF)
+      E=YF(0)
+      EOR(E,128,E)
+      YF(0)=E
+      .FADD(PID2,YF,S)
+      .FMUL(YF,YF,YY)
+      JUMP(383)
+    ENDIF
+  ENDIF
+ENDPROC
+
+
+** ABS **
+* calculates ABS(Float)
+
+PROC ABS
+IN
+  ARRAY
+  [
+  X(6)=212
+  ]
+OUT
+  ARRAY
+  [
+  Y(6)=212
+  ]
+LOCAL
+  BYTE
+  [
+  Q
+  ]
+BEGIN
+  Q=X(0)
+  AND(Q,127,Q)
+  X(0)=Q
+ENDPROC
+
+ÿ

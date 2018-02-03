@@ -1,0 +1,80 @@
+
+þ
+
+Quick-Sourcetext
+D1:PLAYER.QIK   
+----------------
+Length: $0299
+
+Free  : $74D2
+----------------
+
+
+
+*
+* Player Library Demo
+* (c) 10.93 Hyperon Soft
+* Template file
+*
+
+
+* Include library first
+
+INCLUDE
+[
+D1:PLAYER.LIB
+]
+
+
+* Declare all global variales for
+* the library
+
+BYTE
+[
+PCOLR0=704,PCOLR1=705 * Player colours
+PCOLR2=706,PCOLR3=707
+]
+
+WORD
+[
+P_SIZE,FREE
+]
+
+ARRAY
+[
+P_X(4),P_Y(4),O_Y(4)
+P_SPEED(4),P_NR(4),P_ANZ(4),P_V(4)
+P_DIR(4)
+P_AKTIV(4)
+P_LEN(4),O_LEN(4)
+P_FREE(255)
+
+* Length of P_DATA arrays depends
+* on the application
+
+P_DATA_0(64)
+P_DATA_1(64)
+P_DATA_2(64)
+P_DATA_3(64)
+
+P_ADR(8),P_SADR(8)
+]
+
+
+* Now your variables may follow
+
+
+MAIN
+
+ENDMAIN
+
+
+* VBI routines for any application
+* that will be insatlled by P_INIT
+
+PROC P_VBI
+BEGIN
+
+ENDPROC
+
+ÿ

@@ -1,0 +1,129 @@
+
+þ
+
+Quick-Sourcetext
+D1:DIMF.QIK     
+----------------
+Length: $0551
+
+Free  : $721A
+----------------
+
+
+
+*Simulation of a two dimensional
+*BYTE array with any width and height
+
+BYTE
+[
+A,CURS=752
+]
+WORD
+[
+FELD        *start address of the array
+HOCH        *height 
+BREIT       *width
+I,J
+]
+
+MAIN
+
+CLOSE(6)
+OPEN(6,12,0,"E:")
+
+FELD=40960  *define start
+HOCH=20     *define size
+BREIT=39
+CURS=1
+
+?("Fuelle Feld")
+I=0         *column index
+J=0         *row index
+A=65
+REPEAT      *fill the columns
+  REPEAT    *with 0 to 19
+    .SETFELD(I,J,A)
+    A+
+    ADD(J,1,J)
+  UNTIL J=HOCH
+  J=0
+  A=65
+  ADD(I,1,I)
+UNTIL I=BREIT
+
+?("Printing array...")
+I=0
+J=0
+REPEAT      *show the columns
+  REPEAT
+    .GETFELD(I,J,A)
+    ?("I:",I,"J:",J,"value:",A)
+    ADD(J,1,J)
+  UNTIL J=HOCH
+  ?
+  J=0
+  ADD(I,1,I)
+UNTIL I=BREIT
+
+J=0
+I=0
+COLOR(125)
+PLOT(0,0)
+REPEAT      *Show as graphics
+  REPEAT
+    .GETFELD(I,J,A)
+    COLOR(A)
+    PLOT(I,J)
+    ADD(J,1,J)
+  UNTIL J=HOCH
+  ?
+  J=0
+  ADD(I,1,I)
+UNTIL I=BREIT
+POS(0,21)
+?("39*20 BYTE array")
+
+ENDMAIN
+
+
+*Sets Feld(Index1,Index2) to value WERT
+
+PROC SETFELD
+IN
+WORD
+[
+INDEX1,INDEX2
+]
+BYTE
+[
+WERT
+]
+BEGIN
+  MULT(INDEX2,BREIT,INDEX2)
+  ADD(INDEX1,INDEX2,INDEX1)
+  ADD(FELD,INDEX1,INDEX1)
+  POKE(INDEX1,WERT)
+ENDPROC
+
+
+*Sets WERT to value Feld(Index1,Index2)
+
+PROC GETFELD
+IN
+WORD
+[
+INDEX1,INDEX2
+]
+OUT
+BYTE
+[
+WERT
+]
+BEGIN
+  MULT(INDEX2,BREIT,INDEX2)
+  ADD(INDEX1,INDEX2,INDEX1)
+  ADD(FELD,INDEX1,INDEX1)
+  PEEK(INDEX1,WERT)
+ENDPROC
+
+ÿ

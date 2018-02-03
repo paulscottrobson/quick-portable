@@ -1,0 +1,357 @@
+
+þ
+
+Quick-Sourcetext
+D1:MANDEL.QIK   
+----------------
+Length: $0F8A
+
+Free  : $67E1
+----------------
+
+
+
+* THE MANDELBROT SET
+* in Quick
+*
+* (C) 1992 by Harald Schoenfeld
+*
+*
+* Here are a few parameters for nice
+* results:
+*
+* GR X1   X2   Y1    Y2    ST   FS
+* 3  -2   1    -1.25 1.25  14   2
+* 4  -2   1    -1.25 1.25  14   1
+* 2  -2   0.5  -1.25 1.25  12   1
+* 1  -2   0.5  -1.25 1.25  12   1
+* 3  -1.5 -1   0     0.5   24   1
+*
+
+INCLUDE
+[
+D1:GRAPH.LIB
+D1:MATH.LIB
+]
+
+BYTE
+[
+* Resolution in Y
+Y_RES
+
+* Number of colours and graphics mode
+C_ANZ,GR
+
+* color step and max. numbers of 
+* iterations
+COLSTEP,MAXIT
+
+* OS colour registers
+COL0=704,COL1=705,COL2=706,COL3=707
+COL4=708,COL5=709,COL6=710,COL7=711
+COL8=712
+
+* Function keys
+CONSOL=53279
+]
+
+WORD
+[
+* Resolution in X
+X_RES
+]
+
+ARRAY
+[
+* Float variables for zooming
+XL(6),XR(6),YO(6),YU(6)
+]
+
+MAIN
+
+-10
+
+* Set up graphics mode
+
+  .INIT
+
+* Select area (zoom)
+
+  .AREA
+
+* Compute
+
+  .ITER
+
+  REPEAT
+  UNTIL CONSOL=6
+
+  JUMP(10)
+
+ENDMAIN
+
+
+* Setup graphics mode
+
+PROC INIT
+BEGIN
+
+-1
+
+  CLOSE(6)
+  OPEN(6,12,0,"E:")
+
+  ?("Graphics mode?")
+  ?("1  HIRES")
+  ?("2  4 Colours")
+  ?("3  8 Colours")
+  ?("4  16 Grey values")
+
+  INPUT(GR)
+
+  IF GR>4
+    JUMP(1)
+  ELSE
+    IF GR<1
+      JUMP(1)
+    ENDIF
+  ENDIF
+
+  .INIGR(GR)
+
+ENDPROC
+
+
+* Start graphics mode, set colours
+* and resolution
+
+PROC INIGR
+IN
+BYTE
+[
+GR
+]
+BEGIN
+
+  IF GR=1
+    .GRAPHICS(24)
+    SETCOLOR(1,0,15)
+    SETCOLOR(2,0,0)
+    X_RES=320
+    Y_RES=192
+    C_ANZ=1
+  ELSE
+    IF GR=2
+      .GRAPHICS(31)
+      X_RES=160
+      Y_RES=192
+      C_ANZ=3
+
+      COL4=30
+      COL5=56
+      COL6=132
+      COL8=0
+
+    ELSE
+      IF GR=3
+        .GRAPHICS(10)
+        X_RES=80
+        Y_RES=192
+        C_ANZ=7
+
+        COL0=0
+        COL1=30
+        COL2=58
+        COL3=86
+        COL4=132
+        COL5=168
+        COL6=202
+        COL7=236
+
+      ELSE
+        IF GR=4
+          .GRAPHICS(9)
+          X_RES=80
+          Y_RES=192
+          C_ANZ=15
+        ENDIF
+      ENDIF
+    ENDIF
+  ENDIF
+
+ENDPROC
+
+
+* Type in zoom parameters and more
+
+PROC AREA
+LOCAL
+  ARRAY
+  [
+  TEMP(20)
+  ]
+BEGIN
+
+  ?("X1");
+  INPUT(TEMP)   ;Read as ASCII
+  .AFP(TEMP,XL) ;convert to float
+  ?("X2");
+  INPUT(TEMP)
+  .AFP(TEMP,XR)
+  ?("Y1");
+  INPUT(TEMP)
+  .AFP(TEMP,YO)
+  ?("Y2");
+  INPUT(TEMP)
+  .AFP(TEMP,YU)
+
+  ?("Search depth");
+  INPUT(MAXIT)
+  ?("Colour steps");
+  INPUT(COLSTEP)
+
+  .INIGR(GR)
+
+ENDPROC
+
+
+PROC ITER
+LOCAL
+  BYTE
+  [
+  Y,COL,ERG
+  ]
+  WORD
+  [
+  ITER,X
+  ]
+  ARRAY
+  [
+  F1(6),F2(6),F4(6),FP2(6),F(6)
+  X0(6),Y0(6),YI(6),XI(6)
+  DX(6),DY(6)
+  ]
+
+BEGIN
+
+* Set up constants
+
+  .AFP("4.0",F4)
+  .AFP("2.0",FP2)
+
+* Width into DX
+  .FSUB(XR,XL,DX)
+  .IFP(X_RES,F)
+  .FDIV(DX,F,DX)
+
+* Height into DY
+  .FSUB(YU,YO,DY)
+  .IFP(Y_RES,F)
+  .FDIV(DY,F,DY)
+
+* Line number of screen is 0
+
+  Y=0
+
+* Start line in the complex plane
+
+  Y0=YO
+
+  REPEAT
+
+* Same for column
+
+    X=0
+    X0=XL
+
+    REPEAT
+
+* Current position in the zoomed area
+* of the complex plane
+
+      XI=X0
+      YI=Y0
+
+* Depth = 1
+
+      ITER=1
+
+      REPEAT
+
+* Compute x*x+y*y
+
+        .FMUL(XI,XI,F2)
+        .FMUL(YI,YI,F1)
+        .FADD(F2,F1,F)
+
+* Compare with 4.0
+
+        .FSUB(F,F4,F)
+        .FCMP(F,ERG)
+
+* If > 4.0
+
+        IF ERG>0
+          JUMP(2) ; goto 2
+        ENDIF
+
+* Continue computation according
+* to the formula described in the text
+
+        .FMUL(XI,YI,F)
+        .FMUL(F,FP2,YI)
+        .FSUB(F2,F1,XI)
+        .FADD(XI,X0,XI)
+        .FADD(YI,Y0,YI)
+
+* Increase depth by 1
+
+        ADD(ITER,1,ITER)
+
+* Break if max depth is reached
+
+      UNTIL ITER=MAXIT
+
+-2
+
+* Divide depth by colour steps
+
+      DIV(ITER,COLSTEP,ITER)
+
+* MODULO number of colours
+
+      AND(ITER,C_ANZ,COL)
+
+* defines the colour for the pixel
+    
+      COLOR(COL)
+      PLOT(X,Y)
+
+* Break if START key is pressed
+
+      IF CONSOL=6
+        JUMP(10)
+      ENDIF
+
+* Next column on screen and in complex
+* plain
+
+      .FADD(X0,DX,X0)
+      ADD(X,1,X)
+
+* Until right margin is reached
+
+    UNTIL X=X_RES
+
+* The same for the lines
+
+    .FADD(Y0,DY,Y0)
+    Y+
+
+* Until lower margin is reached
+
+  UNTIL Y=Y_RES
+
+ENDPROC
+
+ÿ

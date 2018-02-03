@@ -1,0 +1,941 @@
+
+þ
+
+Quick-Sourcetext
+D1:NECCOPY.QIK  
+----------------
+Length: $2677
+
+Free  : $50F4
+----------------
+
+
+
+* PRINTER.QIK
+* Hard copy program for 24 pin printers
+* (C) 1991 HYPERON SOFT
+* (P) THOMAS OTTO
+
+* Picture size: A4 TO 9
+* Print start:   P
+* Break:      Esc
+
+INCLUDE
+[
+ D1:TEXT.LIB
+]
+
+TYP
+[
+ BYTE
+ [
+  Q,GR
+ ]
+ WORD
+ [
+  DL
+ ]
+]
+
+MAIN
+ .BS(8,0,52)
+ DPEEK(88,DL)
+ .AUFBAU1 
+ REPEAT
+  BGET(4,1,$AFFF)
+  PEEK($AFFF,Q)
+  IF Q>48
+   IF Q<53
+    IF Q=49
+     .LOAD_PIC
+    ENDIF
+    IF Q=50
+     .SHOW_PIC
+    ENDIF
+    IF Q=51
+     .DRUCK
+    ENDIF
+    IF Q=52
+     .LABEL
+    ENDIF
+    .BS(8,0,52)
+    .AUFBAU1
+   ENDIF
+  ENDIF
+ UNTIL Q=53
+ .BS(8,0,14)
+ENDMAIN
+
+PROC BS
+IN
+ BYTE
+ [
+  C0
+  C1
+  C2
+ ]
+LOCAL
+ WORD
+ [
+  COL0=709
+  COL1=710
+  COL2=712
+ ]
+BEGIN
+ CLOSE(6)
+ OPEN(6,12,8,"S:")
+ COL0=C0
+ COL1=C1
+ COL2=C2
+ CLOSE(4)
+ OPEN(4,4,0,"K:")
+ENDPROC
+
+PROC AUFBAU1
+BEGIN
+ .TEXT(80,08,"")
+ .TEXT(80,16,"| GRAPHIC-PRINTER |")
+ .TEXT(80,24,"")
+ .TEXT(16,48,"-1- Load Picture")
+ .TEXT(16,64,"-2- Show Picture")
+ .TEXT(16,80,"-3- Print DINA 4-9")
+ .TEXT(16,96,"-4- Disk - Label")
+ .TEXT(16,112,"-5- Exit")
+ENDPROC
+
+PROC LOAD_PIC
+ LOCAL
+  ARRAY
+  [
+   NAME(15)
+  ]
+BEGIN
+ .TEXT(16,144,"File name -> ")
+ .EING(104,144,15,NAME)
+ CLOSE(1)
+ OPEN(1,4,0,NAME)
+  BGET(1,7680,$7200)
+ CLOSE(1)
+ .SHOW_PIC
+ENDPROC
+
+PROC SHOW_PIC
+BEGIN
+ .BS(0,0,68)
+ BMOVE($7200,DL,$1E00)
+ POKE(709,8)
+ BGET(4,1,$AFFF)
+ENDPROC
+
+PROC DRUCK
+ LOCAL
+  BYTE
+  [
+   Q,Q1
+   Z,Z1,Z2
+   LR,MAX
+  ]
+BEGIN
+ GR=4
+ LR=0
+ MAX=16
+ REPEAT
+  .BS(8,0,66)
+  .TEXT(104,8,"")
+  .TEXT(104,16,"| Hardcopy |")
+  .TEXT(104,24,"")
+  .TEXT(8,48,"Size : DIN ")
+  .TEXTB(120,48,GR)
+  .TEXT(8,64,"Left margin : ")
+  .TEXTB(120,64,LR)
+  .TEXT(8,112,"ESC to break")
+  REPEAT
+   Q1=0
+   BGET(4,1,$AFFF)
+   PEEK($AFFF,Q)
+   IF Q>51
+    IF Q<58
+     SUB(Q,48,GR)
+     .TEXTB(120,48,GR)
+     IF GR=4
+      MAX=16
+     ENDIF
+     IF GR=6
+      MAX=48
+     ENDIF
+     IF GR=8
+      MAX=64
+     ENDIF
+     IF GR=5
+      MAX=8
+     ENDIF
+     IF GR=7
+      MAX=44
+     ENDIF
+     IF GR=9
+      MAX=62
+     ENDIF
+     IF MAX<LR
+      LR=MAX
+      .TEXTB(120,64,LR)
+     ENDIF
+    ENDIF
+   ENDIF
+   IF Q=43
+    IF LR>0
+     LR-
+     .TEXTB(120,64,LR)
+    ENDIF
+   ENDIF
+   IF Q=42
+    IF LR<MAX
+     LR+
+     .TEXTB(120,64,LR)
+    ENDIF
+   ENDIF
+   IF Q=80
+    Q1=1
+   ENDIF
+   IF Q=27
+    Q1=1
+   ENDIF
+  UNTIL Q1=1
+  IF Q=80
+   AND(GR,1,Z)
+   IF Z=1
+    .DR_LAENGS(LR)
+   ELSE
+    .DR_QUER(LR)
+   ENDIF
+   .TEXT(8,112,"                 ")
+  ENDIF
+ UNTIL Q=27
+ENDPROC
+
+
+PROC DR_QUER
+ IN
+  BYTE
+  [
+   LR
+  ]
+ LOCAL
+  BYTE
+  [
+   B1,Q1
+   XL,ANZ,N1,N2,M,VS
+   J1,J2,J3
+  ]
+  WORD
+  [
+   ADR1
+  ]
+BEGIN
+ BMOVE($7200,DL,7680)
+ .DR_INT(LR)
+ IF GR=4
+  DATA($71F0)
+  [
+   27,51,24
+   27,42,33,0,3
+   0,0,0
+   10
+  ]
+  ANZ=4
+ ENDIF
+ IF GR=6
+  DATA($71F0)
+  [
+   27,51,24
+   27,42,33,128,1
+   0,0,0
+   10
+  ]
+  ANZ=2
+ ENDIF
+ IF GR=8
+  DATA($71F0)
+  [
+   27,51,12
+   27,42,33,192,0
+   0,0,0
+   10
+  ]
+  ANZ=1
+ ENDIF
+ BPUT(2,3,$71F0)
+ J1=0
+ REPEAT
+  ADD(DL,7640,ADR1)
+  ADD(ADR1,J1,ADR1)
+  BPUT(2,5,$71F3)
+  J2=192
+  REPEAT
+   PEEK(ADR1,B1)
+   IF GR=4
+    .SPALT_4(B1,J2)
+   ENDIF
+   IF GR=6
+    .SPALT_6(B1)
+   ENDIF
+   IF GR=8
+    .SPALT_8(B1)
+   ENDIF
+   J3=0
+   REPEAT
+    BPUT(2,3,$71F8)
+    J3+
+   UNTIL J3=ANZ
+   SUB(ADR1,40,ADR1)
+   J2-
+  UNTIL J2=0
+  BPUT(2,1,$71FB)
+  IF GR=4
+   .DR_4_2(ANZ)
+  ENDIF
+  J1+
+  PEEK(764,Q1)
+  IF Q1=28
+   J1=40
+  ENDIF
+ UNTIL J1>39
+ CLOSE(2)
+ENDPROC
+
+PROC DR_INT
+ IN
+  BYTE
+  [
+   LR
+  ]
+BEGIN
+ CLOSE(2)
+ OPEN(2,8,0,"P:")
+ POKE($71FC,27)
+ POKE($71FD,64)
+ POKE($71FE,27)
+ POKE($71FF,108)
+ BPUT(2,4,$71FC)
+ POKE($71FF,LR)
+ BPUT(2,1,$71FF)
+ENDPROC
+
+PROC SPALT_6
+ IN
+  BYTE
+  [
+   B1
+  ]
+ LOCAL
+  BYTE
+  [
+   Q1,S,BIT
+   D0,D1,D2,D3
+  ]
+  WORD
+  [
+   W1,W2,W3
+   Z1
+  ]
+BEGIN
+ W1=0
+ Q1=128
+ S=4
+ Z1=57344
+ REPEAT
+  AND(B1,Q1,BIT)
+  IF BIT<>0
+   ADD(W1,Z1,W1)
+  ENDIF
+  LSRW(Z1)
+  LSRW(Z1)
+  LSRW(Z1)
+  LSRB(Q1)
+  S-
+ UNTIL S=0
+ W2=0
+ Q1=8
+ S=4
+ Z1=3584
+ REPEAT
+  AND(B1,Q1,BIT)
+  IF BIT<>0
+   ADD(W2,Z1,W2)
+  ENDIF
+  LSRW(Z1)
+  LSRW(Z1)
+  LSRW(Z1)
+  LSRB(Q1)
+  S-
+ UNTIL S=0
+ AND(W1,$FF00,W3)
+ LSRW(W3)
+ LSRW(W3)
+ LSRW(W3)
+ LSRW(W3)
+ LSRW(W3)
+ LSRW(W3)
+ LSRW(W3)
+ LSRW(W3)
+ D1=W3
+ AND(W1,$FF,D2)
+ AND(W2,$FF,D3)
+ AND(W2,$FF00,W3)
+ LSRW(W3)
+ LSRW(W3)
+ LSRW(W3)
+ LSRW(W3)
+ LSRW(W3)
+ LSRW(W3)
+ LSRW(W3)
+ LSRW(W3)
+ D0=W3
+ OR(D2,D0,D2)
+ POKE($71F8,D1)
+ POKE($71F9,D2)
+ POKE($71FA,D3)
+ENDPROC
+
+PROC SPALT_8
+ IN
+  BYTE
+  [
+   B1
+  ]
+ LOCAL
+  BYTE
+  [
+   BIT,S,Q1
+   D1,D2,D3
+   B0
+  ]
+  WORD
+  [
+   W1,W3
+   Z1,Z2
+  ]
+BEGIN
+ Q1=$80
+ W1=0
+ Z1=$8000
+ S=8
+ REPEAT
+  AND(B1,Q1,BIT)
+  AND(S,1,B0)
+  IF B0=1
+   IF BIT<>0
+    ADD(W1,Z1,W1)
+    Z2=Z1
+    LSRW(Z2)
+    ADD(W1,Z2,W1)
+   ENDIF
+   LSRW(Z1)
+   LSRW(Z1)
+  ELSE
+   IF BIT<>0
+    ADD(W1,Z1,W1)
+   ENDIF
+   LSRW(Z1)
+  ENDIF
+  LSRB(Q1)    
+  S-
+ UNTIL S=0
+ AND(W1,$FF00,W3)
+ LSRW(W3)
+ LSRW(W3)
+ LSRW(W3)
+ LSRW(W3)
+ LSRW(W3)
+ LSRW(W3)
+ LSRW(W3)
+ LSRW(W3)
+ D1=W3
+ AND(W1,$FF,D2)
+ D3=0
+ POKE($71F8,D1)
+ POKE($71F9,D2)
+ POKE($71FA,D3)
+ENDPROC
+
+PROC DR_4_2
+ IN
+  BYTE
+  [
+   ANZ
+  ]
+ LOCAL
+  BYTE
+  [
+   J2,J3
+  ]
+  WORD
+  [
+   ADR2
+  ]
+BEGIN
+ BPUT(2,5,$71F3)
+ ADR2=$7200
+ J2=192
+ REPEAT 
+  MULT(J2,3,ADR2)
+  ADD(ADR2,$7200,ADR2)
+  J3=0
+  REPEAT
+   BPUT(2,3,ADR2)
+   J3+
+  UNTIL J3=ANZ
+  J2-
+ UNTIL J2=0
+ BPUT(2,1,$71FB)
+ENDPROC
+
+PROC SPALT_4
+ IN
+  BYTE
+  [
+   B1,J2
+  ]
+ LOCAL
+  BYTE
+  [
+   Q1,S,BIT
+   D1,D2
+  ]
+  WORD
+  [
+   ADR2
+   W1,W3,Z1
+  ]
+BEGIN
+ Q1=$80
+ W1=0
+ Z1=$C000
+ S=8
+ REPEAT
+  AND(B1,Q1,BIT)
+  IF BIT<>0
+   ADD(W1,Z1,W1)
+  ENDIF
+  LSRW(Z1)
+  LSRW(Z1)
+  LSRB(Q1)
+  S-
+ UNTIL S=0
+ AND(W1,$FF00,W3)
+ LSRW(W3)
+ LSRW(W3)
+ LSRW(W3)
+ LSRW(W3)
+ LSRW(W3)
+ LSRW(W3)
+ LSRW(W3)
+ LSRW(W3)
+ D1=W3
+ AND(W1,$FF,D2)
+ .SPALT_6(D2)
+ MULT(J2,3,ADR2)
+ ADD(ADR2,$7200,ADR2)
+ FMOVE($71F8,ADR2,3)
+ .SPALT_6(D1)
+ENDPROC
+
+
+PROC DR_LAENGS
+ IN
+  BYTE
+  [
+   LR
+  ]
+ LOCAL
+  BYTE
+  [
+   B1,ANZ,Q1
+   J1,J3
+  ]
+  WORD
+  [
+   ADR1
+   J2
+  ]
+BEGIN
+ .BER_SCREEN
+ ADR1=$7200 
+ .DR_INT(LR)
+ IF GR=5
+  DATA($71F0)
+  [
+   27,51,16
+   27,42,39,0,5
+   0,0,0
+   10
+  ]
+  ANZ=4
+ ENDIF
+ IF GR=7
+  DATA($71F0)
+  [
+   27,51,16
+   27,42,39,128,2
+   0,0,0
+   10
+  ]
+  ANZ=2
+ ENDIF
+ IF GR=9
+  DATA($71F0)
+  [
+   27,51,8
+   27,42,39,64,1
+   0,0,0
+   10
+  ]
+  ANZ=1
+ ENDIF
+ BPUT(2,3,$71F0)
+ J1=0
+ REPEAT
+  BPUT(2,5,$71F3)
+  J2=0
+  REPEAT
+   POKE($71F9,0)
+   POKE($71FA,0)
+   PEEK(ADR1,B1)
+   ADD(ADR1,1,ADR1)
+   IF GR=5
+    .SPALT_5(B1,J2)
+   ENDIF
+   IF GR=7
+    .SPALT_7(B1)
+   ENDIF
+   IF GR=9
+    POKE($71F8,B1)
+   ENDIF
+   J3=0
+   REPEAT
+    BPUT(2,3,$71F8)
+    J3+
+   UNTIL J3=ANZ
+   ADD(J2,1,J2)
+  UNTIL J2=320
+  BPUT(2,1,$71FB)
+  IF GR=5
+   .GR_5_2(ANZ)
+  ENDIF
+  J1+
+  PEEK(764,Q1)
+  IF Q1=28
+   J1=24
+  ENDIF
+ UNTIL J1=24
+ CLOSE(2)
+ BMOVE(DL,$7200,7680)
+ENDPROC
+
+PROC BER_SCREEN
+ LOCAL
+  BYTE
+  [
+   J1,J2,J3
+   B1,B0,BIT
+   Q1,Q2
+  ]
+  WORD
+  [
+   ADR1,ADR2,ADR3
+   P,P1,P2
+  ]
+BEGIN
+ BMOVE($7200,DL,7680)
+ ADR1=DL
+ ADR2=$7200
+ ADD(ADR2,7680,ADR3)
+ REPEAT
+  POKE(ADR2,0)
+  ADD(ADR2,1,ADR2)
+ UNTIL ADR2>ADR3
+ Q2=$80
+ P1=0
+ P2=0
+ J1=0
+ REPEAT
+  J2=0
+  REPEAT
+   PEEK(ADR1,B1)
+   ADD(ADR1,1,ADR1)
+   Q1=$80
+   J3=0
+   REPEAT
+    AND(B1,Q1,BIT)
+    IF BIT<>0
+     ADD($7200,P1,P)
+     ADD(P,P2,P)
+     PEEK(P,B0)
+     OR(B0,Q2,B0)
+     POKE(P,B0)
+    ENDIF
+    LSRB(Q1)
+    ADD(P1,1,P1)
+    J3+
+   UNTIL J3=8
+   J2+
+  UNTIL J2=40
+  LSRB(Q2)
+  P1=0
+  IF Q2<1
+   ADD(P2,$0140,P2)
+   Q2=$80
+  ENDIF
+  J1+
+ UNTIL J1=192
+ENDPROC
+
+PROC SPALT_7
+ IN
+  BYTE
+  [
+   B1
+  ]
+ LOCAL
+  BYTE
+  [
+   Q1,S,BIT,D1,D2
+  ]
+  WORD
+  [
+   W1,W3,Z1
+  ]
+BEGIN
+ Q1=$80
+ W1=0
+ Z1=$C000
+ S=8
+ REPEAT
+  AND(B1,Q1,BIT)
+  IF BIT<>0
+   ADD(W1,Z1,W1)
+  ENDIF
+  LSRW(Z1)
+  LSRW(Z1)
+  LSRB(Q1)
+  S-
+ UNTIL S=0
+ AND(W1,$FF00,W3)
+ LSRW(W3)
+ LSRW(W3)
+ LSRW(W3)
+ LSRW(W3)
+ LSRW(W3)
+ LSRW(W3)
+ LSRW(W3)
+ LSRW(W3)
+ D1=W3
+ AND(W1,$FF,D2)
+ POKE($71F8,D1)
+ POKE($71F9,D2)
+ENDPROC
+
+PROC SPALT_5
+ IN
+  BYTE
+  [
+   B1
+  ]
+  WORD
+  [
+   J2
+  ]
+ LOCAL
+  WORD
+  [
+   ADR1
+  ]
+BEGIN
+ .SPALT_7(B1)
+ ADD($7200,J2,ADR1)
+ PEEK($71F9,B1)
+ POKE(ADR1,B1)
+ PEEK($71F8,B1)
+ .SPALT_7(B1)
+ENDPROC
+
+PROC GR_5_2
+ IN
+  BYTE
+  [
+   ANZ
+  ]
+ LOCAL
+  BYTE
+  [
+   B1,J3
+  ]
+  WORD
+  [
+   ADR1,J2
+  ]
+BEGIN
+ BPUT(2,5,$71F3)
+ J2=0
+ REPEAT
+  ADD($7200,J2,ADR1)
+  PEEK(ADR1,B1)
+  .SPALT_7(B1)
+  J3=0
+  REPEAT
+   BPUT(2,3,$71F8)
+   J3+
+  UNTIL J3=ANZ
+  ADD(J2,1,J2)
+ UNTIL J2=320
+ BPUT(2,1,$71FB)
+ENDPROC
+
+PROC LABEL
+ LOCAL
+  BYTE
+  [
+   Q,Q1,LR
+  ]
+BEGIN
+ REPEAT
+  .BS(8,0,66)
+  .TEXT(80,8,"")
+  .TEXT(80,16,"| DISK LABEL |") 
+  .TEXT(80,24,"")
+  .TEXT(8,40,"X-Size = 312")
+  .TEXT(8,48,"Y-Size = 120")
+  .TEXT(8,64,"Left margin -> 00 ")
+  .TEXT(8,112,"ESC to break")
+  LR=0
+  REPEAT
+   Q1=0
+   BGET(4,1,$AFFF)
+   PEEK($AFFF,Q)
+   IF Q=42
+    IF LR<39
+     LR+
+     .TEXTB(128,64,LR)
+    ENDIF
+   ENDIF
+   IF Q=43
+    IF LR>0
+     LR-
+     .TEXTB(128,64,LR)
+    ENDIF
+   ENDIF
+   IF Q=80
+    Q1=1
+   ENDIF
+   IF Q=27
+    Q1=1
+   ENDIF
+  UNTIL Q1=1
+  IF Q=80
+   .DR_LABEL(LR)
+  ENDIF
+ UNTIL Q=27
+ENDPROC
+
+PROC DR_LABEL
+ IN
+  BYTE
+  [
+   LR
+  ]
+ LOCAL
+  BYTE
+  [
+   B1,J1
+  ]
+  WORD
+  [
+   ADR1,J2
+  ]
+BEGIN
+ .DR_INT(LR)
+ POKE($71F0,27)
+ POKE($71F1,51)
+ POKE($71F2,16)
+ POKE($71F3,27)
+ POKE($71F4,42)
+ POKE($71F5,39)
+ POKE($71F6,112)
+ POKE($71F7,2)
+ POKE($71F8,0)
+ POKE($71F9,0)
+ POKE($71FA,0)
+ POKE($71FB,10)
+ .BER_SCREEN
+ ADR1=$7200
+ BPUT(2,3,$71F0)
+ J1=0
+ REPEAT
+  BPUT(2,5,$71F3)
+  J2=0
+  REPEAT
+   PEEK(ADR1,B1)
+   ADD(ADR1,1,ADR1)
+   .SPALT_7(B1)
+   BPUT(2,3,$71F8)
+   BPUT(2,3,$71F8)
+   ADD(J2,1,J2)
+  UNTIL J2=312
+  BPUT(2,1,$71FB)
+  ADD(ADR1,8,ADR1)
+  J1+
+ UNTIL J1=16
+ CLOSE(2)
+ BMOVE(DL,$7200,7680)
+ENDPROC
+
+PROC EING
+IN
+ WORD
+ [
+  X
+ ]
+ BYTE
+ [
+  Y,L
+ ]
+OUT
+ ARRAY
+ [
+  NAME(20)
+ ]
+LOCAL
+ BYTE
+ [
+  I,WERT,WERT1,L1,X1
+ ]
+ ARRAY
+ [
+  W1(1)
+ ]
+BEGIN
+ I=0
+ REGA(L1)
+ X1=X
+ REPEAT
+  BGET(4,1,$AFFF)
+  PEEK($AFFF,WERT)
+  IF WERT=126
+   L1-
+   SUB(X1,8,X1)
+   .TEXT(X1,Y," ")
+   NAME(L1)=32
+  ELSE
+   IF WERT<>155
+    IF L1<L
+     W1(0)=WERT
+     .TEXT(X1,Y,W1)
+     ADD(X1,8,X1)
+     NAME(L1)=WERT)
+     L1+
+    ENDIF
+   ENDIF
+  ENDIF
+ UNTIL WERT=155
+ENDPROC
+
+ÿ

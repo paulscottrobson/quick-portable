@@ -1,0 +1,257 @@
+
+þ
+
+Quick-Sourcetext
+D1:LIST.QIK     
+----------------
+Length: $0AB3
+
+Free  : $6CB8
+----------------
+
+
+
+* QUICK v2.1
+* SOURCECODE Listing Program
+* (c) '89 RAINDORF SOFT
+* (c) '92 HYPERON SOFT
+* published by PPP Germany
+* international version
+
+* 2 column listings for Epson
+* compatible printers
+
+BYTE
+  [
+  SUP,D,EF,Z,X=1791,TA=1790,L,SEI
+  ]
+
+WORD
+  [
+  AD,AD1,SL,SPAL,LADEND
+  ]
+
+ARRAY
+  [
+  FILE(20),DATE(10),TIME(10)
+  T(90)=24900
+  ]
+
+MAIN
+  UNSIGN
+  REPEAT
+    .ANFANG
+    .SETUP
+    .DRUCK
+  UNTIL 1=0
+ENDMAIN
+
+
+PROC ANFANG
+BEGIN
+  CLOSE(6)
+  OPEN(6,12,0,"E:")
+  SETCOL(2,3,4)
+
+  ?("QIK-Print")
+  ?("for two column QIK listings")
+  ?
+  ?("Filename");
+  INPUT(FILE)
+  ?("Date");
+  INPUT(DATE)
+  ?("Time");
+  INPUT(TIME)
+
+  CLOSE(1)
+ENDPROC
+
+
+PROC SETUP
+LOCAL
+  BYTE
+  [
+  PAP
+  ]
+BEGIN
+  ?("Draft(0) or LQ(1)")
+  INPUT(D)
+  ?("Single sheet(0) oder endless(1)")
+  INPUT(PAP)
+  IF PAP=0
+    SL=80
+    LADEND=31400
+    SPAL=3200
+  ELSE
+    SL=85
+    LADEND=31800
+    SPAL=3400
+  ENDIF
+
+  OPEN(1,4,0,FILE)
+  REPEAT
+    BGET(1,1,24900)
+    X=T(0)
+  UNTIL X=254
+  BGET(1,2,24900)
+
+  CLOSE(5)
+  OPEN(5,8,0,"P:")
+  IF D=0
+    DATA(T)
+    [
+    27,64,27,120,0
+    ]
+  ELSE
+    DATA(T)
+    [
+    27,64,27,120,1
+    ]
+  ENDIF
+  BPUT(5,5,24900)
+  DATA(T)
+  [
+  27,77,27,83,0,27,108,6,27,82,0,27,48
+  27,68,44,0
+  ]
+  BPUT(5,17,24900)
+  SUP=0
+ENDPROC
+
+
+PROC DRUCK
+BEGIN
+  SEI=1
+
+  REPEAT
+  EF=0
+  .LOESCH
+  .LADE
+  .PRI
+  SEI+
+  UNTIL EF=1
+
+  CLOSE(1)
+  CLOSE(5)
+ENDPROC
+
+
+PROC LOESCH
+BEGIN
+  ?("Page ",SEI)
+  AD=25000
+
+  REPEAT
+    Z=0
+    REPEAT
+      ADD(AD,Z,AD1)
+      POKE(AD1,32)
+      Z+
+    UNTIL Z=39
+    ADD(AD,Z,AD1)
+    POKE(AD1,155)
+  ADD(AD,40,AD)
+  UNTIL AD>=LADEND
+ENDPROC
+
+
+PROC LADE
+BEGIN
+  AD=25000
+  EF=0
+
+  REPEAT
+    Z=40
+    IF EF=0
+
+    REPEAT
+      BGET(1,1,24900)
+      X=T(0)
+      IF X=255
+        EF=1
+        X=155
+      ENDIF
+      POKE(AD,X)
+      ADD(AD,1,AD)
+      Z-
+    UNTIL X=155
+
+    ADD(AD,Z,AD)
+    ELSE
+      POKE(AD,155)
+      ADD(AD,40,AD)
+    ENDIF
+  UNTIL AD>=LADEND
+ENDPROC
+
+
+PROC PRI
+BEGIN
+  IF D=0
+    D=1
+    DATA(T)
+    [
+    27,83,1
+    ]
+  ELSE
+    D=0
+    DATA(T)
+    [
+    27,83,0
+    ]
+  ENDIF
+  BPUT(5,3,24900)
+  .HEAD
+  AD=25000
+  TA=9
+  Z=0
+
+  REPEAT
+    AD1=AD
+    REPEAT
+      PEEK(AD1,X)
+      IF X<>155
+        IF X<32
+          X=35
+        ENDIF
+        BPUT(5,1,1791)
+      ELSE
+        BPUT(5,1,1790)
+      ENDIF
+      ADD(AD1,1,AD1)
+    UNTIL X=155
+    ADD(AD,SPAL,AD1)
+    REPEAT
+      PEEK(AD1,X)
+      IF X<32
+        X=35
+      ENDIF
+      BPUT(5,1,1791)
+      ADD(AD1,1,AD1)
+    UNTIL X=155
+    Z+
+  ADD(AD,40,AD)
+  UNTIL Z=SL
+
+  TA=12
+  BPUT(5,1,1790)
+ENDPROC
+
+
+PROC HEAD
+BEGIN
+  DATA(T)
+  [
+  27,97,49
+  ]
+  BPUT(5,3,24900)
+  LPT ("   Listing of ",FILE," page ");
+  LPT (SEI,"on ",DATE," at ",TIME);
+  DATA(T)
+  [
+  155,27,97,48,155,0
+  ]
+  BPUT(5,6,24900)
+ENDPROC
+
+ÿ

@@ -1,0 +1,441 @@
+
+þ
+
+Quick-Sourcetext
+D1:LIFE.QIK     
+----------------
+Length: $18F5
+
+Free  : $5E76
+----------------
+
+
+
+*LIFE
+*(c) RAINDORFSOFT '89
+*Version 1.0 "Arrays"
+
+BYTE
+[
+X,Y,Z,CU,LE
+CURS=752,KEY=764
+]
+WORD
+[
+BS=88
+FELD        *Starting address of the 
+            *BYTE array
+FELD2       *temporary array
+HOCH        *height of the array
+BREIT       *width (40!)
+]
+ARRAY
+[
+FNAME(20)
+]
+
+MAIN
+
+.INIT
+.LOOP
+
+ENDMAIN
+
+
+*Initialize
+
+PROC INIT
+BEGIN
+  CLOSE(6)
+  OPEN(6,12,0,"E:")
+  SETCOL(2,12,2)
+
+  FELD=BS  *array in screen buffer
+  HOCH=20  *set dimensions
+  BREIT=40 *40 for fast multiplication
+           *build in!
+           * 20*40 because of screen
+           * dimensions
+  FELD2=40960
+
+  CURS=1      *Cursor off
+
+  POS(1,21)
+  ?("Set Del Clr Run Break Put Get ");
+  ?("- = + *");
+  POS(3,22)
+ ?("L I F E  (c) '89 by RAINDORF SOFT")
+
+  COLOR(18)
+  PLOT(0,20)
+  DRAW(39,20)
+  PLOT(0,23)
+  DRAW(39,23)
+
+  X=20
+  Y=10
+  CU=154  *Cursor sign
+  LE=84   *character for set element
+  .LEER
+  Z=0
+  .SETFELD(X,Y,CU)
+ENDPROC
+
+
+*simulation routine
+
+PROC RUN
+LOCAL
+BYTE
+[
+I,J,I1,J1,I2,J2,A,F
+]
+BEGIN
+REPEAT
+
+  I=0
+  J=0
+
+  CLR(160,4)  *clear from adr. 160*256
+              *(= Feld2) 4*256
+              *Bytes 
+
+  REPEAT
+    REPEAT
+      A=0  *Search for neighbours
+           *and calculate their sum
+
+      SUB(I,1,I1)       *I-1
+      IF I1=255
+        I1=39
+      ENDIF
+      SUB(J,1,J1)       *J-1
+      IF J1=255
+        J1=19
+      ENDIF
+      ADD(I,1,I2)       *I+1
+      IF I2=40
+        I2=0
+      ENDIF
+      ADD(J,1,J2)       *J+1
+      IF J2=20
+        J2=0
+      ENDIF
+
+      .GETFELD(I1,J1,F)
+      IF F<>0
+        A+
+      ENDIF
+      .GETFELD(I1,J2,F)
+      IF F<>0
+        A+
+      ENDIF
+      .GETFELD(I1,J,F)
+      IF F<>0
+        A+
+      ENDIF
+      IF A<4   *If already 4 no further
+        .GETFELD(I,J1,F)   *search
+        IF F<>0            *necessary
+          A+
+        ENDIF
+        IF A<4
+          .GETFELD(I,J2,F)
+          IF F<>0
+            A+
+          ENDIF
+          IF A<4
+            .GETFELD(I2,J1,F)
+            IF F<>0
+              A+
+            ENDIF
+            IF A<4
+              .GETFELD(I2,J,F)
+              IF F<>0
+                A+
+              ENDIF
+              IF A>0
+                .GETFELD(I2,J2,F)
+                IF F<>0
+                  A+
+                ENDIF
+              ENDIF
+            ENDIF
+          ENDIF
+        ENDIF
+      ENDIF
+
+      IF A=3   *if 3 neighbours
+        .SET2FELD(I,J,LE) *set element
+               *im 2. Feld
+      ELSE
+        IF A=2  *if 2 neighbours
+          .GETFELD(I,J,I1) *use the
+          .SET2FELD(I,J,I1) *same value
+        ENDIF
+      ENDIF     *else clear element
+
+      J+
+    UNTIL J=HOCH
+    J=0
+    I+
+  UNTIL I=BREIT
+
+  BMOVE(FELD2,FELD,800)  *copy array 2 
+                         *into 1
+UNTIL KEY=21
+.GETFELD(X,Y,Z)
+
+ENDPROC
+
+
+*main loop
+
+PROC LOOP
+BEGIN
+
+REPEAT
+  KEY=255
+  REPEAT
+  UNTIL KEY<>255  *wait for key
+
+  IF KEY=62    *set element
+    .SETFELD(X,Y,LE)
+    Z=LE
+  ELSE
+    IF KEY=58  *clear element
+      .SETFELD(X,Y,0)
+      Z=0
+    ELSE
+      IF KEY=18  *clear array
+        .LEER
+        Z=0
+        .SETFELD(X,Y,CU)
+      ELSE
+        IF KEY=40  *Start
+          .SETFELD(X,Y,Z)
+          .RUN
+          .GETFELD(X,Y,Z)
+          .SETFELD(X,Y,CU)
+        ELSE
+          IF KEY=14  *Cursor up
+            .SETFELD(X,Y,Z)
+            Y-
+            IF Y=255
+              Y=19
+            ENDIF
+            .GETFELD(X,Y,Z)
+            .SETFELD(X,Y,CU)
+          ELSE
+            IF KEY=15  *down
+              .SETFELD(X,Y,Z)
+              Y+
+              IF Y>19
+                Y=0
+              ENDIF
+              .GETFELD(X,Y,Z)
+              .SETFELD(X,Y,CU)
+            ELSE
+              IF KEY=6  *left
+                .SETFELD(X,Y,Z)
+                X-
+                IF X=255
+                  X=39
+                ENDIF
+                .GETFELD(X,Y,Z)
+                .SETFELD(X,Y,CU)
+              ELSE
+                IF KEY=7  *right
+                  .SETFELD(X,Y,Z)
+                  X+
+                  IF X=40
+                    X=0
+                  ENDIF
+                  .GETFELD(X,Y,Z)
+                  .SETFELD(X,Y,CU)
+                ELSE
+                  IF KEY=61 *Save
+                    .LOAD
+                  ELSE
+                    IF KEY=10
+                      .SAVE *Merge
+                    ENDIF
+                  ENDIF
+                ENDIF
+              ENDIF
+            ENDIF
+          ENDIF
+        ENDIF
+      ENDIF
+    ENDIF
+  ENDIF
+UNTIL 1=0
+ENDPROC
+
+
+*Merge data
+
+PROC LOAD
+LOCAL
+BYTE
+[
+I,J,B=205
+]
+BEGIN
+  .NAME
+
+  OPEN(1,4,0,FNAME)
+  I=0
+  J=0
+  REPEAT
+    REPEAT
+      BGET(1,1,205)
+      IF B<>0          *load array only
+        .SETFELD(I,J,B) *if not empty
+      ENDIF
+      I+
+    UNTIL I=BREIT
+    I=0
+    J+
+  UNTIL J=HOCH
+  CLOSE(1)
+
+  .GETFELD(X,Y,Z) *Save char. under
+  .SETFELD(X,Y,CU) *cursor and show
+  COLOR(18)       *show
+  PLOT(0,20)
+  DRAW(39,20)
+
+ENDPROC    
+  
+
+*Save array
+
+PROC SAVE
+BEGIN
+  .NAME
+
+  OPEN(1,8,0,FNAME)
+  BPUT(1,800,FELD)  *Save all 800 Bytes
+  CLOSE(1)
+  .GETFELD(X,Y,Z)
+  .SETFELD(X,Y,CU)
+  COLOR(18)
+  PLOT(0,20)
+  DRAW(39,20)
+ENDPROC
+
+
+*input file name
+
+PROC NAME
+BEGIN
+  COLOR(32)
+  PLOT(0,20)
+  DRAW(30,20)
+  .SETFELD(X,Y,Z)
+
+  POS(0,20)
+  KEY=255        *File name
+  ?("Filename");
+  INPUT(FNAME)   *input
+ENDPROC
+
+
+* Fills array with blanks - slow
+* version. Fast version see PROC RUN
+
+PROC LEER
+LOCAL
+BYTE
+[
+I,J
+]
+BEGIN
+  I=0
+  J=0
+  REPEAT
+    REPEAT
+      .SETFELD(I,J,0)
+      J+
+    UNTIL J=HOCH
+    J=0
+    I+
+  UNTIL I=BREIT
+ENDPROC
+
+
+* Sets Feld(index1,index2) to value
+* WERT with slow MULT version
+
+PROC SETFELD
+IN
+WORD
+[
+INDEX1,INDEX2
+]
+BYTE
+[
+WERT
+]
+BEGIN
+  MULT(INDEX2,BREIT,INDEX2)
+  ADD(INDEX1,INDEX2,INDEX1)
+  ADD(FELD,INDEX1,INDEX1)
+  POKE(INDEX1,WERT)
+ENDPROC
+
+
+* Get value WERT of Feld(index1,index2)
+* Now with fast mult
+
+PROC GETFELD
+IN
+WORD
+[
+INDEX1,INDEX2
+]
+OUT
+BYTE
+[
+WERT
+]
+BEGIN
+  ASLW(INDEX2)             * INDEX2*8
+  ASLW(INDEX2)
+  ASLW(INDEX2)
+  ADD(INDEX1,INDEX2,INDEX1)
+  ASLW(INDEX2)             *16
+  ASLW(INDEX2)             *32
+  ADD(INDEX1,INDEX2,INDEX1)
+  ADD(FELD,INDEX1,INDEX1)
+  PEEK(INDEX1,WERT)
+ENDPROC
+
+
+*Set Feld2(Index1,Index2) to Wert
+
+PROC SET2FELD
+IN
+WORD
+[
+INDEX1,INDEX2
+]
+BYTE
+[
+WERT
+]
+BEGIN
+  ASLW(INDEX2)             * INDEX2*40
+  ASLW(INDEX2)
+  ASLW(INDEX2)
+  ADD(INDEX1,INDEX2,INDEX1)
+  ASLW(INDEX2)
+  ASLW(INDEX2)
+  ADD(INDEX1,INDEX2,INDEX1)
+  ADD(FELD2,INDEX1,INDEX1)
+  POKE(INDEX1,WERT)
+ENDPROC
+
+
+ÿ

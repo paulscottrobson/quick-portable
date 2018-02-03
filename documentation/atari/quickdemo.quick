@@ -1,0 +1,256 @@
+
+þ
+
+Quick-Sourcetext
+D1:QIKDEMO.QIK  
+----------------
+Length: $0E11
+
+Free  : $695A
+----------------
+
+
+
+* QUICK V2.1
+* Graphics and interrupt-demo
+* (c) '89 Raindorf Soft
+* published by PPP Germany
+
+BYTE
+  [
+  DMA=559
+  WSYNC=54282
+  PMBASE=54279
+  GRAC=53277
+  HPOS1=53248,HPOS2=53249
+  PCOL1=704,PCOL2=705
+  BCOL=712
+  TIMER=20
+  CURS=752
+  COLBK=53274
+  DINDEX=87
+  X,Y,FLAG,CZAE,FARBE
+  ]
+
+WORD
+  [
+  DPL=560
+  BS=88
+  PL
+  PDAT,PDAT1
+  Z,Z1
+  ]
+
+MAIN
+
+* No sign
+
+  UNSIGN
+
+* Copy DPL into RAM
+* (including a DLI command)
+
+  DATA(24576)
+  [
+  112,112,112,199,32768,112,6,2,2,2,2
+  15,15,15,15,15,15,15,15,15,15,15,15
+  15,15,15,15,15,15,15,15,15,15,15,15
+  15,15,15,15,15,15,15,15,15,15,15,15
+  15,15,15,15,15,15,15,15,15,15,15,15
+  15,15,15,15,15,15,15,15,15,15,15,15
+  65,24576
+  ]
+
+  DMA=0          *Screen off
+  DPL=24576      *set DLI pointer
+  BS=32768       *start of screen
+
+  CLR(128,11)    *clear RAM
+  SETCOL(4,0,0)  *set colours
+  SETCOL(2,10,4)
+  CURS=1         *Cursor off
+  DMA=34         *Screen on again
+
+  POS(0,0)       *
+  PRINT("     quick demo     ")
+  PRINT("QUICK programs are real ");
+  PRINT("MACHINECODE")
+  PRINT("programs after compilation")
+
+  .PAUSE(150)    *procedure "PAUSE"
+
+  POS(0,1)
+  PRINT("So a DLI is no Problem ");
+  PRINT("                          ")
+  PRINT("                          ")
+
+*copy player data
+
+  DATA(25600)
+  [
+  7,31,63,63,63,63,63,31,15
+  6,24,96,60
+  192,240,54,127,255,255,246,240,224
+  192,96,48,30
+  7,31,63,63,63,63,63,31,15
+  3,6,15,0
+  192,240,54,127,255,255,246,240,224
+  192,192,96,120
+  7,31,63,63,63,63,63,31,15
+  1,1,6,7
+  192,240,54,127,255,255,246,240,224
+  192,96,120,0
+  ]
+
+  PMBASE=112    *Player start
+  GRAC=3        *Player on
+  PCOL1=120     *Player colour
+  PCOL2=120
+  PL=29696      
+
+  DLI(DISP)    *routine "DISP" as DLI
+  DMA=34
+  .PAUSE(150)
+
+  POS(0,1)
+  PRINT("A VBI for playermovment");
+  PRINT(" is very")
+  PRINT("easy, too")
+
+  X=48          *Player-Position
+  Y=100
+  PDAT=25600
+  PDAT1=25613
+  FLAG=0
+
+  DMA=62       *Screen with Player
+  VBI(GNOM)    *routine "GNOM" as VBI
+  .PAUSE(150)
+
+  POS(0,1)
+  PRINT("And the Main program still ");
+  PRINT("can show ")
+  PRINT("HiRes graphics!");
+  PRINT("     ")
+  ?("Type Ctrl-1 to stop the main");
+  ?(" program...")
+
+  DINDEX=8      *simulated Gr. 8
+  BS=32968      *Screen start
+  FARBE=1
+
+*Draw graphics
+
+  REPEAT
+    Z=0
+    Z1=319
+    COLOR(FARBE)
+    REPEAT
+      PLOT (Z,0)
+      DRAW (Z1,59)
+      ADD (Z,6,Z)
+      SUB (Z1,6,Z1)
+    UNTIL Z>=319
+    FARBE+
+  UNTIL FARBE=255
+ENDMAIN
+
+
+*DLI
+
+INTER DISP
+BEGIN
+  PUSH        *Save CPU register
+  IPUSH       *Save internal Reg.
+  CZAE=224 
+  REPEAT
+    REGA(WSYNC) *Synchronize
+    COLBK=CZAE  *Change colour
+    CZAE+
+    CZAE+
+  UNTIL CZAE=240
+  IPULL       *Restore regs.
+  PULL
+ENDDLI
+
+
+*VBI
+
+INTER GNOM
+LOCAL
+  BYTE
+  [
+  HX
+  ]
+BEGIN
+  IPUSH
+  X+       *Change Player position
+  Y+
+  IF X>=170
+    X=48
+    Y=100
+  ENDIF
+
+  ADD(PDAT,26,PDAT)   *Used different
+  ADD(PDAT1,26,PDAT1) *shapes
+  FLAG+
+
+  IF FLAG=3
+    FLAG=0     *First shape again
+    PDAT=25600
+    PDAT1=25613
+  ENDIF
+
+  CLR(116,2)   *Clear Player-RAM
+
+*Copy Player1 in Player-RAM
+
+  PLAYER (116,Y,13,PDAT)
+
+*Copy Player2 in Player-RAM
+
+  PLAYER (117,Y,13,PDAT1)
+
+*set horizontal position
+
+  HPOS1=X
+  ADD (X,8,HX)
+  HPOS2=HX
+  BCOL+
+  IPULL
+ENDVBI
+
+
+*Subroutine "PAUSE"
+
+PROC PAUSE
+IN
+  BYTE
+  [
+  WAIT
+  ]
+LOCAL
+  BYTE
+  [ 
+  LDA=165   *define machine code
+  CMP=205
+  BNE=208
+  ]
+BEGIN
+  TIMER=0
+
+*Use real machine code now. That's
+*absolutely unneccessary here, but
+*let's do it.
+*In QUICK it would look like this:
+*REPEAT
+*UNTIL TIMER=WAIT
+*But that's too easy...
+
+  INLINE
+  [
+  LDA,TIMER,CMP,WAIT,BNE,249
+  ]
+ENDPROC
+
+ÿ

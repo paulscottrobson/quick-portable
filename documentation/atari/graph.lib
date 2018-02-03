@@ -1,0 +1,398 @@
+
+þ
+
+Quick-Sourcetext
+D1:GRAPH.LIB    
+----------------
+Length: $0F1C
+
+Free  : $684F
+----------------
+
+
+
+
+ 
+* QUICK V2.1
+* Standard Graphics Library
+* (c) RAINDORF SOFT 5/89 & 3/92
+* international version 11/92
+
+
+** GRAPHICS **
+* init GRAPHIC(GR)
+
+PROC GRAPHICS
+IN
+  BYTE
+  [
+  GR
+  ]
+LOCAL
+  BYTE
+  [
+  FKT,BETR
+  ]
+BEGIN
+  ANDB(GR,15,FKT)
+  IF GR>47
+    BETR=44
+  ELSE
+    IF GR>31
+      BETR=60
+    ELSE
+      IF GR>15
+        BETR=12
+      ELSE
+        BETR=28
+      ENDIF
+    ENDIF
+  ENDIF
+  CLOSE(6)
+  OPEN(6,BETR,FKT,"S:")
+ENDPROC
+
+
+** FRAME **
+* draws a rectangle
+
+PROC FRAME
+IN
+  WORD
+  [
+  X1,Y1,X2,Y2
+  ]
+BEGIN
+  PLOT(X1,Y1)
+  DRAW(X2,Y1)
+  DRAW(X2,Y2)
+  DRAW(X1,Y2)
+  DRAW(X1,Y1)
+ENDPROC
+
+
+** BOX **
+* draws a filled rectangle
+
+PROC BOX
+IN
+  WORD
+  [
+  X1,Y1,X2,Y2
+  ]
+LOCAL
+  WORD
+  [
+  H
+  ]
+BEGIN
+  IF Y1>Y2
+    H=Y1
+    Y1=Y2
+    Y2=H
+  ENDIF
+  REPEAT
+    PLOT(X1,Y1)
+    DRAW(X2,Y1)
+    ADD(Y1,1,Y1)
+  UNTIL Y1>Y2
+ENDPROC
+
+
+** CIRCLE **
+* draws a circle
+
+PROC CIRCLE
+IN
+  WORD
+  [
+  X0,Y0,R
+  ]
+LOCAL
+  BYTE
+  [
+  FLAG
+  ]
+BEGIN
+  FLAG=0
+  .CIRC(X0,Y0,R,FLAG)
+ENDPROC
+
+
+** DISC **
+* draws a filled circle
+
+PROC DISC
+IN
+  WORD
+  [
+  X0,Y0,R
+  ]
+LOCAL
+  BYTE
+  [
+  FLAG
+  ]
+BEGIN
+  FLAG=1
+  .CIRC(X0,Y0,R,FLAG)
+ENDPROC
+
+
+** CIRC **
+* intern *
+
+PROC CIRC
+IN
+  WORD
+  [
+  X0,Y0,R
+  ]
+  BYTE
+  [
+  FLAG
+  ]
+LOCAL
+  BYTE
+  [
+  GM,HALF
+  ]
+  WORD
+  [
+  X,Y,X1,Y1,X2,Y2,X3,Y3
+  H,MX,MY
+  ]
+BEGIN
+  SIGN
+  PEEK(87,GM)
+  AND(GM,15,GM)
+  MX=79
+  MY=47
+  HALF=0
+  IF GM>13
+    MX=159
+    MY=191
+    HALF=1
+  ELSE
+    IF GM=8
+      MX=319
+      MY=191
+    ELSE
+      IF GM<8
+        MX=159
+        MY=95
+      ELSE
+        IF GM>8
+          MX=79
+          MY=191
+          HALF=2
+        ENDIF
+      ENDIF
+    ENDIF
+  ENDIF
+  X=0
+  Y=R
+  H=Y
+  LSRW(H)
+  REPEAT
+    IF H<0
+      ADD(H,R,H)
+      SUB(Y,1,Y)
+    ENDIF
+    X3=X
+    Y3=Y
+    IF HALF>0
+      ASRW(X3)
+      ASRW(Y3)
+      IF HALF=2
+        ASRW(X3)
+        ASRW(Y3)
+      ENDIF
+    ENDIF
+    ADD(X0,X3,X1)
+    ADD(Y0,Y,Y1)
+    SUB(X0,X3,X2)
+    SUB(Y0,Y,Y2)
+    IF X1>MX
+      X1=MX
+    ENDIF
+    IF X2<0
+      X2=0
+    ENDIF
+    IF Y1>MY
+      Y1=MY
+    ENDIF
+    IF Y2<0
+      Y2=0
+    ENDIF
+    PLOT(X1,Y1)
+    IF FLAG=1
+      DRAW(X2,Y1)
+    ELSE
+      PLOT(X2,Y1)
+    ENDIF
+    PLOT(X1,Y2)
+    IF FLAG=1
+      DRAW(X2,Y2)
+    ELSE
+      PLOT(X2,Y2)
+    ENDIF
+    ADD(X0,Y3,X1)
+    ADD(Y0,X,Y1)
+    SUB(X0,Y3,X2)
+    IF X1>MX
+      X1=MX
+    ENDIF
+    IF X2<0
+      X2=0
+    ENDIF
+    IF Y1>MY
+      Y1=MY
+    ENDIF
+    PLOT(X1,Y1)
+    IF FLAG=1
+      DRAW(X2,Y1)
+    ELSE
+      PLOT(X2,Y1)
+    ENDIF
+    SUB(Y0,X,Y2)
+    IF Y2<0
+      Y2=0
+    ENDIF
+    PLOT(X1,Y2)
+    IF FLAG=1
+      DRAW(X2,Y2)
+    ELSE
+      PLOT(X2,Y2)
+    ENDIF
+    SUB(H,1,H)
+    SUB(H,X,H)
+    ADD(X,1,X)
+  UNTIL X>Y
+ENDPROC
+
+** FILL **
+* fills an area
+
+PROC FILL
+IN
+  WORD
+  [
+  X
+  ]
+  BYTE
+  [
+  Y
+  ]
+  WORD
+  [
+  XMIN
+  ]
+  BYTE
+  [
+  YMIN
+  ]
+  WORD
+  [
+  XMAX
+  ]
+  BYTE
+  [
+  YMAX
+  ]
+LOCAL
+  WORD
+  [
+  MX
+  ]
+  BYTE
+  [
+  MY,W,P,FL,FR
+  ]
+  ARRAY
+  [
+  XP(127)
+  YP(127)
+  ]
+BEGIN
+  UNSIGN
+  P=0
+  W=0
+
+-380
+  FL=0
+  FR=0
+  WHILE X>XMIN
+    SUB(X,1,X)
+    POS(X,Y)
+    LOCATE(W)
+    IF W<>0
+      ADD(X,1,X)    
+      JUMP(379)
+    ENDIF
+  WEND
+
+-379
+  MX=X
+  MY=Y
+  REPEAT
+    IF Y>YMIN
+      Y-
+      POS(X,Y)
+      LOCATE(W)
+      IF W=0
+        IF FL=0
+          XP(P)=X
+          YP(P)=Y
+          P+
+          P+
+          FL=1
+        ENDIF
+      ELSE
+        FL=0
+      ENDIF
+      Y+
+    ENDIF
+ 
+    IF Y<YMAX
+      Y+
+      POS(X,Y)
+      LOCATE(W)
+      IF W=0
+        IF FR=0
+          XP(P)=X
+          YP(P)=Y
+          P+
+          P+
+          FR=1
+        ENDIF
+      ELSE
+        FR=0
+      ENDIF
+      Y-
+    ENDIF
+    ADD(X,1,X)
+    POS(X,Y)
+    LOCATE(W)
+    IF X=XMAX
+      W=1
+    ENDIF
+  UNTIL W<>0
+
+  SUB(X,1,X)
+  PLOT(MX,MY)
+  DRAW(X,Y)
+  IF P<>0
+    REPEAT
+      P-
+      P-
+      X=XP(P)
+      Y=YP(P)
+      POS(X,Y)
+      LOCATE(W)
+    UNTIL W=0    
+    JUMP(380)
+  ENDIF
+ENDPROC
+
+ÿ
